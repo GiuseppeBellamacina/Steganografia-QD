@@ -439,6 +439,77 @@ else:  # mode == "Recuperare dati"
                     st.error(f"❌ Errore: {str(e)}")
             else:
                 st.warning("⚠️ Carica un'immagine!")
+    # IMMAGINI
+    elif data_type == "Immagini":
+        st.subheader("🖼️ Recuperare Immagine")
+        
+        # Opzioni parametri
+        backup_file_path, use_recent, manual_params = display_backup_options("image_get", show_manual=True)
+        
+        # Parametri manuali se richiesti
+        lsb = msb = div = width = height = None
+        if manual_params:
+            st.subheader("⚙️ Parametri Manuali")
+            col1, col2, col3, col4, col5 = st.columns(5)
+            
+            with col1:
+                lsb = st.number_input("LSB", min_value=1, max_value=8, value=1, key="manual_lsb")
+            with col2:
+                msb = st.number_input("MSB", min_value=1, max_value=8, value=8, key="manual_msb")
+            with col3:
+                div = st.number_input("DIV", min_value=0.1, value=1.0, key="manual_div")
+            with col4:
+                width = st.number_input("Larghezza", min_value=1, value=100, key="manual_width")
+            with col5:
+                height = st.number_input("Altezza", min_value=1, value=100, key="manual_height")
+        
+        output_name = st.text_input("Nome file output", value="recovered_image.png", key="img_recover_output")
+        
+        if st.button("🔓 Recupera Immagine", type="primary"):
+            if hidden_image:
+                try:
+                    # Salva immagine temporaneamente
+                    hidden_path = save_uploaded_file(hidden_image)
+                    if hidden_path:
+                        img = Image.open(hidden_path)
+                        
+                        # Recupera immagine
+                        with st.spinner("Recuperando immagine..."):
+                            recovered_img = get_image(
+                                img, output_name, lsb, msb, div, width, height, backup_file_path
+                            )
+                        
+                        if recovered_img:
+                            st.success("✅ Immagine recuperata!")
+                            
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                st.image(recovered_img, caption="Immagine recuperata", width=400)
+                            with col2:
+                                st.write(f"**Dimensioni:** {recovered_img.width} x {recovered_img.height}")
+                                st.write(f"**Modalità:** {recovered_img.mode}")
+                            
+                            # Converti l'immagine in buffer per il download
+                            img_buffer = io.BytesIO()
+                            recovered_img.save(img_buffer, format='PNG')
+                            img_buffer.seek(0)
+                            
+                            # Download
+                            st.download_button(
+                                "📥 Scarica immagine recuperata",
+                                img_buffer.getvalue(),
+                                file_name=output_name,
+                                mime="image/png"
+                            )
+                        else:
+                            st.error("❌ Impossibile recuperare l'immagine")
+                    else:
+                        st.error("❌ Errore nel salvare l'immagine")
+                
+                except Exception as e:
+                    st.error(f"❌ Errore: {str(e)}")
+            else:
+                st.warning("⚠️ Carica un'immagine!")
 
 # Footer
 st.markdown("---")
