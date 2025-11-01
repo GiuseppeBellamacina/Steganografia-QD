@@ -543,3 +543,114 @@ def hide_bin_file(img, file, zipMode=NO_ZIP, n=0, div=0, backup_file=None):
     save_backup_data("binary", params, backup_file)
     
     return (img_copy, n, div, total_bytes)
+
+def get_bin_file(img, new_file_path, zipMode=None, n=None, div=None, size=None, backup_file=None):
+    """Ottieni un file binario da un'immagine"""
+    
+    # Recupera parametri automaticamente se non forniti
+    if any(param is None for param in [zipMode, n, div, size]):
+        print("Alcuni parametri mancanti, cercando nei backup...")
+        
+        # Controlla se esistono parametri di backup
+        backup_data = None
+        if backup_file:
+            backup_data = load_backup_data(backup_file)
+        
+        # Se non ci sono backup file, controlla le variabili locali
+        if not backup_data:
+            recent_params = get_last_params("binary")
+            if recent_params:
+                print("Usando parametri dall'ultima operazione di occultamento file binari")
+                backup_data = {'type': 'binary', 'params': recent_params}
+        
+        if backup_data and 'params' in backup_data:
+            params = backup_data['params']
+            zipMode = zipMode if zipMode is not None else params.get('zipMode')
+            n = n if n is not None else params.get('n')
+            div = div if div is not None else params.get('div')
+            size = size if size is not None else params.get('size')
+            print(f"Parametri recuperati: zipMode={zipMode}, n={n}, div={div:.2f}, size={size}")
+        else:
+            raise ValueError("Parametri mancanti per il recupero del file. Fornisci un file backup (.dat) o inserisci i parametri manualmente")
+    
+    # Verifica che tutti i parametri siano validi
+    if any(param is None for param in [zipMode, n, div, size]):
+        raise ValueError("Alcuni parametri necessari per il recupero sono mancanti. Verifica il file backup o inserisci tutti i parametri manualmente")
+    
+    # Assert per il type checker
+    assert zipMode is not None and n is not None and div is not None and size is not None
+    
+    # check if n is in range
+    if n < 1 or n > 8:
+        raise ValueError("Il valore di N deve essere compreso tra 1 e 8")
+    
+    # check if zipMode is in range
+    if zipMode not in [0, 1, 2]:
+        raise ValueError("La modalità di compressione deve essere 0 (nessuna), 1 (file) o 2 (directory)")
+    
+    print("Cercando file...")
+    # start getting file
+    arr = np.array(img).flatten().copy()
+    bits, res = "", ""
+    ind, pos = 0, 0
+    diff = size*8
+    err = round(size*8/n)
+    
+    if zipMode != NO_ZIP:
+        res = new_file_path
+        new_file_path = "tmp.zip"
+    
+    with open(new_file_path, 'wb') as file:
+        for i in range(err):
+            if diff < n:
+                bits += format(arr[pos], '08b')[-diff:]
+            else:
+                bits += format(arr[pos], '08b')[-n:] # get last n bits
+            
+            if len(bits) >= 1024:
+                wr = bits[:1023]
+                wr = string_to_bytes(wr)
+                file.write(wr)
+                bits = bits[1024:]
+            
+            ind += div
+            pos = round(ind)
+        
+        if len(bits):
+            bits = string_to_bytes(bits)
+            file.write(bits)
+        
+        file.close()
+        
+        if zipMode == NO_ZIP:
+            print(f"FILE TROVATO - File salvato come {new_file_path}")
+        elif zipMode == FILE:
+            print("Decompressione file...")
+            # unzip file
+            try:
+                with zipfile.ZipFile(new_file_path, 'r') as zf:
+                    old_path = zf.namelist()[0]
+                    file_data = zf.read(old_path)
+                    zf.close()
+                remove(new_file_path)
+                with zipfile.ZipFile(new_file_path, 'w') as zf:
+                    zf.writestr(res, file_data)
+                    zf.close()
+                with zipfile.ZipFile(new_file_path, 'r') as zf:
+                    zf.extractall()
+                    zf.close()
+                    remove(new_file_path)
+                    print(f"FILE TROVATO - File salvato come {res}")
+            except Exception as e:
+                raise ValueError(f"Errore durante l'estrazione: {e}")
+        else:
+            print("Decompressione directory...")
+            try:
+                with zipfile.ZipFile(new_file_path, 'r') as zf:
+                    zf.extractall(res)
+                    # delete tmp.zip
+                    zf.close()
+                    remove(new_file_path)
+                    print(f"DIRECTORY TROVATA - Directory salvata come {res}")
+            except Exception as e:
+                raise ValueError(f"Errore durante l'estrazione: {e}")
