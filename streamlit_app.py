@@ -377,3 +377,26 @@ if mode == "Nascondere dati":
                     st.error(f"❌ Errore: {str(e)}")
             else:
                 st.warning("⚠️ Carica un'immagine e un file!")
+
+# RECUPERARE DATI
+else:  # mode == "Recuperare dati"
+    st.header("📤 Recuperare Dati")
+    
+    # Caricamento immagine con dati nascosti
+    st.subheader("🖼️ Immagine con dati nascosti")
+    hidden_image = st.file_uploader(
+        "Carica l'immagine che contiene i dati nascosti",
+        type=['png', 'jpg', 'jpeg'],
+        key="hidden_image"
+    )
+    
+    if hidden_image:
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            st.image(hidden_image, caption="Immagine con dati nascosti", width=400)
+        with col2:
+            img = Image.open(hidden_image)
+            st.write(f"**Dimensioni:** {img.width} x {img.height}")
+            st.write(f"**Modalità:** {img.mode}")
+    
+    st.markdown("---")
