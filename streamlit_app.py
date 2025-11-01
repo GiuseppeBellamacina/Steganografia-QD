@@ -400,3 +400,15 @@ else:  # mode == "Recuperare dati"
             st.write(f"**Modalità:** {img.mode}")
     
     st.markdown("---")
+
+# Footer
+st.markdown("---")
+st.markdown(
+    """
+    <div style='text-align: center'>
+        <p>🔒 <strong>Steganografia App</strong> - Nascondere e recuperare dati in modo sicuro</p>
+        <p><em>Sviluppato con ❤️ usando Streamlit</em></p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
