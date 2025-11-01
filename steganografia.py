@@ -608,7 +608,7 @@ def get_bin_file(img, new_file_path, zipMode=None, n=None, div=None, size=None, 
                 bits += format(arr[pos], '08b')[-n:] # get last n bits
             
             if len(bits) >= 1024:
-                wr = bits[:1023]
+                wr = bits[:1024]
                 wr = string_to_bytes(wr)
                 file.write(wr)
                 bits = bits[1024:]
