@@ -400,6 +400,45 @@ else:  # mode == "Recuperare dati"
             st.write(f"**Modalità:** {img.mode}")
     
     st.markdown("---")
+    # STRINGHE
+    if data_type == "Stringhe":
+        st.subheader("📝 Recuperare Stringa")
+        
+        # Per le stringhe non servono parametri particolari
+        st.info("💡 Le stringhe non richiedono parametri speciali - il recupero è automatico!")
+        
+        if st.button("🔓 Recupera Messaggio", type="primary"):
+            if hidden_image:
+                try:
+                    # Salva immagine temporaneamente
+                    hidden_path = save_uploaded_file(hidden_image)
+                    if hidden_path:
+                        img = Image.open(hidden_path)
+                        
+                        # Recupera messaggio
+                        with st.spinner("Recuperando messaggio..."):
+                            message = get_message(img)
+                        
+                        if message:
+                            st.success("✅ Messaggio recuperato!")
+                            st.text_area("Messaggio nascosto:", value=message, height=100)
+                            
+                            # Download come file di testo
+                            st.download_button(
+                                "📥 Scarica messaggio come file di testo",
+                                message.encode('utf-8'),
+                                file_name="messaggio_recuperato.txt",
+                                mime="text/plain"
+                            )
+                        else:
+                            st.error("❌ Nessun messaggio trovato nell'immagine")
+                    else:
+                        st.error("❌ Errore nel salvare l'immagine")
+                
+                except Exception as e:
+                    st.error(f"❌ Errore: {str(e)}")
+            else:
+                st.warning("⚠️ Carica un'immagine!")
 
 # Footer
 st.markdown("---")
