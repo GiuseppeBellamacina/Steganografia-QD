@@ -598,3 +598,72 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
+# Istruzioni dinamiche per l'utente
+with st.sidebar:
+    st.markdown("---")
+    st.markdown("### 📖 Istruzioni")
+    
+    if mode == "Nascondere dati":
+        if data_type == "Stringhe":
+            st.markdown("""
+            **Nascondere Stringhe:**
+            1. 📤 Carica l'immagine di destinazione
+            2. ✍️ Scrivi il messaggio da nascondere
+            3. 💾 Opzionalmente salva parametri su file
+            4. 🔒 Clicca "Nascondi Messaggio"
+            5. 📥 Scarica il risultato
+            """)
+        elif data_type == "Immagini":
+            st.markdown("""
+            **Nascondere Immagini:**
+            1. 📤 Carica l'immagine host (più grande)
+            2. 🖼️ Carica l'immagine da nascondere
+            3. ⚙️ Imposta parametri LSB/MSB/DIV
+            4. 💾 Opzionalmente salva parametri
+            5. 🔒 Clicca "Nascondi Immagine"
+            6. 📥 Scarica il risultato
+            """)
+        else:  # File binari
+            st.markdown("""
+            **Nascondere File:**
+            1. 📤 Carica l'immagine di destinazione
+            2. 📁 Carica il file da nascondere
+            3. ⚙️ Scegli compressione e parametri
+            4. 💾 Opzionalmente salva parametri
+            5. 🔒 Clicca "Nascondi File"
+            6. 📥 Scarica il risultato
+            """)
+    else:  # Recuperare dati
+        if data_type == "Stringhe":
+            st.markdown("""
+            **Recuperare Stringhe:**
+            1. 📤 Carica l'immagine con messaggio
+            2. 🔓 Clicca "Recupera Messaggio"
+            3. 📖 Leggi il messaggio recuperato
+            4. 📥 Scarica come file di testo
+            
+            💡 **Nessun parametro richiesto!**
+            """)
+        elif data_type == "Immagini":
+            st.markdown("""
+            **Recuperare Immagini:**
+            1. 📤 Carica l'immagine con dati nascosti
+            2. 🔧 Scegli fonte parametri:
+               - 🔄 Automatico (variabili recenti)
+               - 📄 File backup (.dat)  
+               - ✋ Inserimento manuale
+            3. 🔓 Clicca "Recupera Immagine"
+            4. 📥 Scarica l'immagine recuperata
+            """)
+        else:  # File binari
+            st.markdown("""
+            **Recuperare File:**
+            1. 📤 Carica l'immagine con file nascosto
+            2. 🔧 Scegli fonte parametri:
+               - 🔄 Automatico (variabili recenti)
+               - 📄 File backup (.dat)
+               - ✋ Inserimento manuale
+            3. 🔓 Clicca "Recupera File"
+            4. 📥 Scarica il file recuperato
+            """)
