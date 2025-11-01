@@ -72,7 +72,7 @@ def setComponentOfColor(mat, i, j, color, channel):
         mat[i,j] = (mat[i,j][0], mat[i,j][1], color)
     return mat
 
-def hide_message(img, msg):
+def hide_message(img, msg, backup_file=None):
     """Nasconde una stringa in una foto"""
     # controlla se l'immagine è abbastanza grande
     if (img.width * img.height) * 3 < len(msg) * 8:
@@ -104,12 +104,30 @@ def hide_message(img, msg):
     original_len = len(msg_binary)
     percentage = format(((original_len / ((img.width * img.height) * 3)) * 100), '.2f')
     print(f"TERMINATO - Percentuale di pixel usati: {percentage}%")
-
+    
+    # Salva i parametri per il recupero
+    params = {
+        'original_message': msg,
+        'method': 'string'
+    }
+    save_backup_data("string", params, backup_file)
+    
     return img_copy
 
-
-def get_message(img):
-
+def get_message(img, backup_file=None):
+    """Ottieni un messaggio nascosto"""
+    # Controlla se esistono parametri di backup
+    backup_data = None
+    if backup_file:
+        backup_data = load_backup_data(backup_file)
+    
+    # Se non ci sono backup file, controlla le variabili locali
+    if not backup_data:
+        recent_params = get_last_params("string")
+        if recent_params:
+            print("Usando parametri dall'ultima operazione di occultamento")
+            backup_data = {'type': 'string', 'params': recent_params}
+    
     if img.mode != "RGB":
         img = img.convert("RGB")
     
@@ -130,6 +148,11 @@ def get_message(img):
                         msg = msg[:-8]
                         msg = binaryConvertBack(msg)
                         
+                        # Verifica con il backup se disponibile
+                        if backup_data and 'params' in backup_data:
+                            original = backup_data['params'].get('original_message', '')
+                            if original == msg:
+                                print("Messaggio verificato con backup")
                         
                         return msg
                     stop = []
