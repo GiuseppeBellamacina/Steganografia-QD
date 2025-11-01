@@ -154,6 +154,18 @@ def setLastNBits(value, bits, n):
     result = min(255, max(0, result))
     return result
 
+def get_last_params(data_type):
+    """Ottiene gli ultimi parametri usati per il tipo di dato specificato"""
+    global _last_string_params, _last_image_params, _last_binary_params
+    
+    if data_type == "string":
+        return _last_string_params
+    elif data_type == "image":
+        return _last_image_params
+    elif data_type == "binary":
+        return _last_binary_params
+    return None
+
 def hide_image(img1, img2, lsb=0, msb=8, div=0, backup_file=None):
     """Nasconde un'immagine in un'altra
         img1: immagine che nasconde (più grande)
