@@ -1,6 +1,14 @@
-from PIL import Image
-from os.path import exists
+from os import remove, walk
+from os.path import getsize, join, relpath, exists
+import zipfile
 import pickle
+from PIL import Image
+import numpy as np
+
+# zipModes
+NO_ZIP = 0
+FILE = 1
+DIR = 2
 
 # Variabili globali per il backup dei parametri recenti
 _last_string_params = None
@@ -45,7 +53,19 @@ def load_backup_data(backup_file):
             return None
     except Exception as e:
         raise ValueError(f"Errore nel caricamento backup: {e}")
+
+def get_last_params(data_type):
+    """Ottiene gli ultimi parametri usati per il tipo di dato specificato"""
+    global _last_string_params, _last_image_params, _last_binary_params
     
+    if data_type == "string":
+        return _last_string_params
+    elif data_type == "image":
+        return _last_image_params
+    elif data_type == "binary":
+        return _last_binary_params
+    return None
+
 def binaryConvert(text):
     """Converte una stringa di testo in una stringa binaria (carattere per carattere)"""
     return ''.join(format(ord(char), '08b') for char in text)
@@ -60,6 +80,16 @@ def setLastBit(value, bit):
     value_str = value_str[:7] + bit # cambia l'ultimo bit
     result = int(value_str, 2) # riconverte la stringa in un numero
     result = min(255, max(0, result)) # controlla se il numero è fuori range
+    return result
+
+def setLastNBits(value, bits, n):
+    """Setta gli ultimi n bits di un numero"""
+    value_str = format(value, '08b')
+    if len(bits) < n:
+        n = len(bits)
+    value_str = value_str[:-n] + bits
+    result = int(value_str, 2)
+    result = min(255, max(0, result))
     return result
 
 def setComponentOfColor(mat, i, j, color, channel):
