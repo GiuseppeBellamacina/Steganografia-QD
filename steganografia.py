@@ -1,6 +1,14 @@
-from PIL import Image
-from os.path import exists
+from os import remove, walk
+from os.path import getsize, join, relpath, exists
+import zipfile
 import pickle
+from PIL import Image
+import numpy as np
+
+# zipModes
+NO_ZIP = 0
+FILE = 1
+DIR = 2
 
 # Variabili globali per il backup dei parametri recenti
 _last_string_params = None
@@ -45,7 +53,19 @@ def load_backup_data(backup_file):
             return None
     except Exception as e:
         raise ValueError(f"Errore nel caricamento backup: {e}")
+
+def get_last_params(data_type):
+    """Ottiene gli ultimi parametri usati per il tipo di dato specificato"""
+    global _last_string_params, _last_image_params, _last_binary_params
     
+    if data_type == "string":
+        return _last_string_params
+    elif data_type == "image":
+        return _last_image_params
+    elif data_type == "binary":
+        return _last_binary_params
+    return None
+
 def binaryConvert(text):
     """Converte una stringa di testo in una stringa binaria (carattere per carattere)"""
     return ''.join(format(ord(char), '08b') for char in text)
@@ -62,6 +82,16 @@ def setLastBit(value, bit):
     result = min(255, max(0, result)) # controlla se il numero è fuori range
     return result
 
+def setLastNBits(value, bits, n):
+    """Setta gli ultimi n bits di un numero"""
+    value_str = format(value, '08b')
+    if len(bits) < n:
+        n = len(bits)
+    value_str = value_str[:-n] + bits
+    result = int(value_str, 2)
+    result = min(255, max(0, result))
+    return result
+
 def setComponentOfColor(mat, i, j, color, channel):
     """Cambia tutte e tre le componenti di colore RGB di un pixel"""
     if channel == 0:
@@ -71,6 +101,31 @@ def setComponentOfColor(mat, i, j, color, channel):
     elif channel == 2:
         mat[i,j] = (mat[i,j][0], mat[i,j][1], color)
     return mat
+
+def findDiv(dim, file, n):
+    """Calcola il valore di divisione per la distribuzione dei bit"""
+    image_dim = dim * n
+    div = ((image_dim - n) / (getsize(file) * 8))
+    return div
+
+def zipdir(path, ziph):
+    """Comprime una directory"""
+    for root, dirs, files in walk(path):
+        for file in files:
+            file_path = join(root, file)
+            arcname = relpath(file_path, path)
+            ziph.write(file_path, arcname)
+
+def save_image(img, file_path):
+    """Salva un'immagine PIL su disco"""
+    try:
+        img.save(file_path)
+        print(f"Immagine salvata come {file_path}")
+        return True
+    except Exception as e:
+        raise ValueError(f"Errore nel salvataggio: {e}")
+
+# FUNZIONI PER STRINGHE
 
 def hide_message(img, msg, backup_file=None):
     """Nasconde una stringa in una foto"""
@@ -167,27 +222,7 @@ def get_message(img, backup_file=None):
     except:
         raise ValueError("Impossibile decodificare il messaggio dall'immagine. Verifica che contenga davvero un messaggio nascosto")
 
-def setLastNBits(value, bits, n):
-    """Setta gli ultimi n bits di un numero"""
-    value_str = format(value, '08b')
-    if len(bits) < n:
-        n = len(bits)
-    value_str = value_str[:-n] + bits
-    result = int(value_str, 2)
-    result = min(255, max(0, result))
-    return result
-
-def get_last_params(data_type):
-    """Ottiene gli ultimi parametri usati per il tipo di dato specificato"""
-    global _last_string_params, _last_image_params, _last_binary_params
-    
-    if data_type == "string":
-        return _last_string_params
-    elif data_type == "image":
-        return _last_image_params
-    elif data_type == "binary":
-        return _last_binary_params
-    return None
+# FUNZIONI PER IMMAGINI
 
 def hide_image(img1, img2, lsb=0, msb=8, div=0, backup_file=None):
     """Nasconde un'immagine in un'altra
@@ -383,3 +418,239 @@ def get_image(img, new_img, lsb=None, msb=None, div=None, width=None, height=Non
         return res_img
     except Exception as e:
         raise ValueError(f"Impossibile ricostruire l'immagine nascosta. Verifica i parametri di recupero. Errore: {str(e)}")
+
+# FUNZIONI PER FILE BINARI
+
+def string_to_bytes(bit_string):
+    """Converte una stringa di bit in bytes"""
+    byte_array = bytearray()
+    for i in range(0, len(bit_string), 8):
+        byte = bit_string[i:i+8]
+        if len(byte) == 8:
+            byte_array.append(int(byte, 2))
+    return byte_array
+
+def hide_bin_file(img, file, zipMode=NO_ZIP, n=0, div=0, backup_file=None):
+    """Nasconde un file binario o una cartella"""
+    # check if n is in range
+    if n < 0 or n > 8:
+        raise ValueError("Il valore di N deve essere compreso tra 1 e 8, oppure 0 per la modalità automatica")
+    
+    # determine channels
+    ch = 3
+    if img.mode == "RGBA":
+        ch = 4
+    if img.mode != "RGB" and img.mode != "RGBA":
+        img = img.convert("RGB")
+    
+    # check if zipMode is in range
+    if zipMode not in [0, 1, 2]:
+        raise ValueError("La modalità di compressione deve essere 0 (nessuna), 1 (file) o 2 (directory)")
+    
+    # zip file if zipMode is 1
+    if zipMode == FILE:
+        print("Compressione file...")
+        with zipfile.ZipFile('tmp.zip', 'w') as zf:
+            zf.write(file)
+        file = 'tmp.zip'
+        print("File compresso")
+    
+    # zip directory if zipMode is 2
+    elif zipMode == DIR:
+        print("Compressione directory...")
+        zipf = zipfile.ZipFile('tmp.zip', 'w', zipfile.ZIP_DEFLATED)
+        zipdir(file, zipf)
+        file = 'tmp.zip'
+        zipf.close()
+        print("Directory compressa")
+    
+    # get file size
+    total_bytes = getsize(file)
+    
+    # auto n
+    if n == 0:
+        while (img.width * img.height) * ch * n < total_bytes * 8:
+            n += 1
+            if n > 8:
+                raise ValueError(f"Immagine troppo piccola per nascondere il file.\nFile: {total_bytes} bytes\nImmagine: {img.width}x{img.height}")
+    
+    # check if image is big enough
+    elif (img.width * img.height) * ch * n < total_bytes * 8:
+        raise ValueError(f"Immagine troppo piccola per nascondere il file.\nFile: {total_bytes} bytes\nImmagine: {img.width}x{img.height}")
+
+    # convert image to array
+    arr = np.array(img).flatten().copy()
+    total_pixels_ch = len(arr)
+    
+    # check if div value is valid
+    if div == 0:
+        div = findDiv(total_pixels_ch, file, n)
+    else:
+        if total_pixels_ch * n < div * total_bytes * 8:
+            raise ValueError(f"Il valore di DIV ({div}) è eccessivo per questo file. Prova con 0 per il calcolo automatico")
+    
+    # start hiding file
+    print("Nascondendo file...")
+    rsv = ""
+    ind, pos = 0, 0
+    
+    # read file
+    with open(file, 'rb') as f:
+        f.seek(0)
+        for i in range(total_bytes):
+            byte = f.read(1) # read byte
+            bits = format(ord(byte), '08b') # convert byte into string of bits
+            bits = rsv + bits
+            rsv = ""
+            while len(bits) >= n:
+                tmp = bits[:n]
+                bits = bits[n:]
+                # set last n bits of pixel
+                arr[pos] = setLastNBits(arr[pos], tmp, n)
+                ind += div
+                pos = round(ind)
+            if len(bits) > 0:
+                rsv = bits
+    
+    f.close()
+    while len(rsv) > 0:
+        tmp = rsv[:n]
+        rsv = rsv[n:]
+        # set last n bits of pixel
+        arr[pos] = setLastNBits(arr[pos], tmp, n)
+        ind += div
+        pos = round(ind)
+    
+    percentage = format(((total_bytes * 8) / ((img.width * img.height) * ch * n)) * 100, '.2f')
+    print(f"TERMINATO - Percentuale di pixel usati con n={n} e div={div}: {percentage}%")
+    
+    if zipMode != NO_ZIP:
+        # delete tmp.zip
+        remove('tmp.zip')
+    
+    img_copy = Image.fromarray(arr.reshape(img.height, img.width, ch))
+    
+    # Salva i parametri per il recupero
+    params = {
+        'n': n,
+        'div': div,
+        'size': total_bytes,
+        'zipMode': zipMode,
+        'method': 'binary',
+        'original_file': file,
+        'channels': ch
+    }
+    save_backup_data("binary", params, backup_file)
+    
+    return (img_copy, n, div, total_bytes)
+
+def get_bin_file(img, new_file_path, zipMode=None, n=None, div=None, size=None, backup_file=None):
+    """Ottieni un file binario da un'immagine"""
+    
+    # Recupera parametri automaticamente se non forniti
+    if any(param is None for param in [zipMode, n, div, size]):
+        print("Alcuni parametri mancanti, cercando nei backup...")
+        
+        # Controlla se esistono parametri di backup
+        backup_data = None
+        if backup_file:
+            backup_data = load_backup_data(backup_file)
+        
+        # Se non ci sono backup file, controlla le variabili locali
+        if not backup_data:
+            recent_params = get_last_params("binary")
+            if recent_params:
+                print("Usando parametri dall'ultima operazione di occultamento file binari")
+                backup_data = {'type': 'binary', 'params': recent_params}
+        
+        if backup_data and 'params' in backup_data:
+            params = backup_data['params']
+            zipMode = zipMode if zipMode is not None else params.get('zipMode')
+            n = n if n is not None else params.get('n')
+            div = div if div is not None else params.get('div')
+            size = size if size is not None else params.get('size')
+            print(f"Parametri recuperati: zipMode={zipMode}, n={n}, div={div:.2f}, size={size}")
+        else:
+            raise ValueError("Parametri mancanti per il recupero del file. Fornisci un file backup (.dat) o inserisci i parametri manualmente")
+    
+    # Verifica che tutti i parametri siano validi
+    if any(param is None for param in [zipMode, n, div, size]):
+        raise ValueError("Alcuni parametri necessari per il recupero sono mancanti. Verifica il file backup o inserisci tutti i parametri manualmente")
+    
+    # Assert per il type checker
+    assert zipMode is not None and n is not None and div is not None and size is not None
+    
+    # check if n is in range
+    if n < 1 or n > 8:
+        raise ValueError("Il valore di N deve essere compreso tra 1 e 8")
+    
+    # check if zipMode is in range
+    if zipMode not in [0, 1, 2]:
+        raise ValueError("La modalità di compressione deve essere 0 (nessuna), 1 (file) o 2 (directory)")
+    
+    print("Cercando file...")
+    # start getting file
+    arr = np.array(img).flatten().copy()
+    bits, res = "", ""
+    ind, pos = 0, 0
+    diff = size*8
+    err = round(size*8/n)
+    
+    if zipMode != NO_ZIP:
+        res = new_file_path
+        new_file_path = "tmp.zip"
+    
+    with open(new_file_path, 'wb') as file:
+        for i in range(err):
+            if diff < n:
+                bits += format(arr[pos], '08b')[-diff:]
+            else:
+                bits += format(arr[pos], '08b')[-n:] # get last n bits
+            
+            if len(bits) >= 1024:
+                wr = bits[:1024]
+                wr = string_to_bytes(wr)
+                file.write(wr)
+                bits = bits[1024:]
+            
+            ind += div
+            pos = round(ind)
+        
+        if len(bits):
+            bits = string_to_bytes(bits)
+            file.write(bits)
+        
+        file.close()
+        
+        if zipMode == NO_ZIP:
+            print(f"FILE TROVATO - File salvato come {new_file_path}")
+        elif zipMode == FILE:
+            print("Decompressione file...")
+            # unzip file
+            try:
+                with zipfile.ZipFile(new_file_path, 'r') as zf:
+                    old_path = zf.namelist()[0]
+                    file_data = zf.read(old_path)
+                    zf.close()
+                remove(new_file_path)
+                with zipfile.ZipFile(new_file_path, 'w') as zf:
+                    zf.writestr(res, file_data)
+                    zf.close()
+                with zipfile.ZipFile(new_file_path, 'r') as zf:
+                    zf.extractall()
+                    zf.close()
+                    remove(new_file_path)
+                    print(f"FILE TROVATO - File salvato come {res}")
+            except Exception as e:
+                raise ValueError(f"Errore durante l'estrazione: {e}")
+        else:
+            print("Decompressione directory...")
+            try:
+                with zipfile.ZipFile(new_file_path, 'r') as zf:
+                    zf.extractall(res)
+                    # delete tmp.zip
+                    zf.close()
+                    remove(new_file_path)
+                    print(f"DIRECTORY TROVATA - Directory salvata come {res}")
+            except Exception as e:
+                raise ValueError(f"Errore durante l'estrazione: {e}")
