@@ -277,4 +277,86 @@ def hide_image(img1, img2, lsb=0, msb=8, div=0, backup_file=None):
     return (img1_copy, lsb, msb, div, w, h)
 
 def get_image(img, new_img, lsb=None, msb=None, div=None, width=None, height=None, backup_file=None):
-    pass
+    """Ottieni un'immagine nascosta da un'altra"""
+    print("Cercando immagine nascosta...")
+    
+    # Recupera parametri automaticamente se non forniti
+    if any(param is None for param in [lsb, msb, div, width, height]):
+        print("Alcuni parametri mancanti, cercando nei backup...")
+        
+        # Controlla se esistono parametri di backup
+        backup_data = None
+        if backup_file:
+            backup_data = load_backup_data(backup_file)
+        
+        # Se non ci sono backup file, controlla le variabili locali
+        if not backup_data:
+            recent_params = get_last_params("image")
+            if recent_params:
+                print("Usando parametri dall'ultima operazione di occultamento immagini")
+                backup_data = {'type': 'image', 'params': recent_params}
+        
+        if backup_data and 'params' in backup_data:
+            params = backup_data['params']
+            lsb = lsb if lsb is not None else params.get('lsb')
+            msb = msb if msb is not None else params.get('msb')
+            div = div if div is not None else params.get('div')
+            width = width if width is not None else params.get('width')
+            height = height if height is not None else params.get('height')
+            print(f"Parametri recuperati: lsb={lsb}, msb={msb}, div={div:.2f}, size={width}x{height}")
+        else:
+            raise ValueError("Parametri mancanti per il recupero dell'immagine. Fornisci un file backup (.dat) o inserisci i parametri manualmente")
+    
+    # Verifica che tutti i parametri siano validi
+    if any(param is None for param in [lsb, msb, div, width, height]):
+        raise ValueError("Alcuni parametri necessari per il recupero sono mancanti. Verifica il file backup o inserisci tutti i parametri manualmente")
+    
+    # Assert per il type checker
+    assert lsb is not None and msb is not None and div is not None
+    assert width is not None and height is not None
+    
+    size = width * height * 3
+    arr = np.array(img).flatten().copy() 
+    res = np.zeros(size, dtype=np.uint8)
+    
+    # Algoritmo migliorato per estrarre l'immagine
+    pos_in_img1 = 0.0
+    bit_buffer = ""
+    pixels_written = 0
+    
+    # Calcola quanti pixel di img1 dobbiamo leggere
+    total_bits_needed = size * msb
+    pixels_to_read = int((total_bits_needed / lsb) * div) + 1
+    
+    while pixels_written < size and pos_in_img1 < len(arr):
+        # Estrai lsb bit dal pixel corrente di img1
+        pixel_pos = int(pos_in_img1)
+        if pixel_pos < len(arr):
+            extracted_bits = format(arr[pixel_pos], '08b')[-lsb:]
+            bit_buffer += extracted_bits
+        
+        # Quando abbiamo abbastanza bit, ricostruisci un pixel di img2
+        while len(bit_buffer) >= msb and pixels_written < size:
+            # Prendi msb bit dal buffer  
+            pixel_bits = bit_buffer[:msb]
+            bit_buffer = bit_buffer[msb:]
+            
+            # Padda a sinistra con zeri per ottenere 8 bit (i bit più significativi)
+            while len(pixel_bits) < 8:
+                pixel_bits = pixel_bits + "0"
+            
+            # Converte in valore pixel e salva
+            res[pixels_written] = int(pixel_bits, 2)
+            pixels_written += 1
+        
+        # Avanza nella posizione di img1
+        pos_in_img1 += div
+    
+    # Converte il risultato in immagine
+    try:
+        res_img = Image.fromarray(res.reshape(height, width, 3))
+        res_img.save(new_img)
+        print(f"IMMAGINE TROVATA - Immagine salvata come {new_img}")
+        return res_img
+    except Exception as e:
+        raise ValueError(f"Impossibile ricostruire l'immagine nascosta. Verifica i parametri di recupero. Errore: {str(e)}")
