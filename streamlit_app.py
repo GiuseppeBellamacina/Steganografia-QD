@@ -240,7 +240,7 @@ if mode == "Nascondere dati":
                             # Converti l'immagine in buffer per il download
                             img_buffer = io.BytesIO()
                             result_img.save(img_buffer, format='PNG')
-                            img_buffer.seek()
+                            img_buffer.seek(0)
                             
                             # Download risultato
                             st.download_button(
