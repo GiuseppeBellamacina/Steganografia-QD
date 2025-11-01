@@ -501,6 +501,10 @@ else:  # mode == "Recuperare dati"
                                 file_name=output_name,
                                 mime="image/png"
                             )
+                            
+                            # Rimuovi file temporaneo se esiste
+                            if os.path.exists(output_name):
+                                os.remove(output_name)
                         else:
                             st.error("❌ Impossibile recuperare l'immagine")
                     else:
