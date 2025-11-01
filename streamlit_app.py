@@ -274,3 +274,104 @@ if mode == "Nascondere dati":
                     st.error(f"❌ Errore: {str(e)}")
             else:
                 st.warning("⚠️ Carica entrambe le immagini!")
+
+# FILE BINARI
+    elif data_type == "File binari":
+        st.subheader("📁 Nascondere File Binario")
+        st.info("💡 La compressione riduce la dimensione del file da nascondere")
+        
+        secret_file = st.file_uploader(
+            "Carica il file da nascondere",
+            key="secret_file"
+        )
+        
+        if secret_file:
+            st.write(f"**Nome file:** {secret_file.name}")
+            st.write(f"**Dimensione:** {len(secret_file.getvalue())} bytes")
+            st.write(f"**Tipo:** {secret_file.type}")
+        
+        # Parametri
+        st.subheader("⚙️ Parametri")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            zip_mode = st.selectbox(
+                "Modalità compressione",
+                [NO_ZIP, FILE, DIR],
+                format_func=lambda x: {NO_ZIP: "Nessuna", FILE: "Comprimi file", DIR: "Comprimi directory"}[x]
+            )
+        with col2:
+            n = st.number_input("N (bit da modificare)", min_value=0, max_value=8, value=0,
+                               help="0 = automatico")
+        with col3:
+            div = st.number_input("Divisore", min_value=0.0, value=0.0, key="bin_div",
+                                 help="0.0 = automatico")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            output_name = st.text_input("Nome file output", value="image_with_file.png", key="bin_output")
+        with col2:
+            save_backup = st.checkbox("Salva parametri su file", key="bin_backup_save")
+            backup_name = ""
+            if save_backup:
+                backup_name = st.text_input("Nome file backup", value="binary_backup.dat", key="bin_backup_name")
+        
+        if st.button("🔒 Nascondi File", type="primary"):
+            if host_image and secret_file:
+                try:
+                    # Salva file temporaneamente
+                    host_path = save_uploaded_file(host_image)
+                    secret_path = save_uploaded_file(secret_file)
+                    
+                    if host_path and secret_path:
+                        img = Image.open(host_path)
+                        
+                        # Nascondi file
+                        backup_file = backup_name if save_backup else None
+                        with st.spinner("Nascondendo file..."):
+                            result = hide_bin_file(img, secret_path, zip_mode, n, int(div), backup_file)
+                        
+                        if result:  # Controllo successo
+                            result_img, final_n, final_div, size = result
+                            st.success("✅ File nascosto con successo!")
+                            
+                            st.info(f"📊 Parametri utilizzati: N={final_n}, DIV={final_div:.2f}, SIZE={size} bytes")
+                            
+                            # Mostra anteprima dell'immagine risultato
+                            st.image(result_img, caption="Anteprima immagine con file nascosto", width=400)
+                            
+                            # Converti l'immagine in buffer per il download
+                            img_buffer = io.BytesIO()
+                            result_img.save(img_buffer, format='PNG')
+                            img_buffer.seek(0)
+                            
+                            # Download risultato
+                            st.download_button(
+                                "📥 Scarica immagine con file nascosto",
+                                img_buffer.getvalue(),
+                                file_name=output_name,
+                                mime="image/png"
+                            )
+                            
+                            # Rimuovi file temporaneo se esiste
+                            if os.path.exists(output_name):
+                                os.remove(output_name)
+                            
+                            # Download backup
+                            if backup_file and os.path.exists(backup_file):
+                                with open(backup_file, "rb") as f:
+                                    st.download_button(
+                                        "💾 Scarica file backup parametri",
+                                        f.read(),
+                                        file_name=backup_file,
+                                        mime="application/octet-stream"
+                                    )
+                        else:
+                            st.error("❌ Errore durante l'occultamento del file")
+                    else:
+                        st.error("❌ Errore nel salvare i file")
+                        
+                except Exception as e:
+                    st.error(f"❌ Errore: {str(e)}")
+            else:
+                st.warning("⚠️ Carica un'immagine e un file!")
