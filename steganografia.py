@@ -102,6 +102,31 @@ def setComponentOfColor(mat, i, j, color, channel):
         mat[i,j] = (mat[i,j][0], mat[i,j][1], color)
     return mat
 
+def findDiv(dim, file, n):
+    """Calcola il valore di divisione per la distribuzione dei bit"""
+    image_dim = dim * n
+    div = ((image_dim - n) / (getsize(file) * 8))
+    return div
+
+def zipdir(path, ziph):
+    """Comprime una directory"""
+    for root, dirs, files in walk(path):
+        for file in files:
+            file_path = join(root, file)
+            arcname = relpath(file_path, path)
+            ziph.write(file_path, arcname)
+
+def save_image(img, file_path):
+    """Salva un'immagine PIL su disco"""
+    try:
+        img.save(file_path)
+        print(f"Immagine salvata come {file_path}")
+        return True
+    except Exception as e:
+        raise ValueError(f"Errore nel salvataggio: {e}")
+
+# FUNZIONI PER STRINGHE
+
 def hide_message(img, msg, backup_file=None):
     """Nasconde una stringa in una foto"""
     # controlla se l'immagine è abbastanza grande
@@ -197,27 +222,7 @@ def get_message(img, backup_file=None):
     except:
         raise ValueError("Impossibile decodificare il messaggio dall'immagine. Verifica che contenga davvero un messaggio nascosto")
 
-def setLastNBits(value, bits, n):
-    """Setta gli ultimi n bits di un numero"""
-    value_str = format(value, '08b')
-    if len(bits) < n:
-        n = len(bits)
-    value_str = value_str[:-n] + bits
-    result = int(value_str, 2)
-    result = min(255, max(0, result))
-    return result
-
-def get_last_params(data_type):
-    """Ottiene gli ultimi parametri usati per il tipo di dato specificato"""
-    global _last_string_params, _last_image_params, _last_binary_params
-    
-    if data_type == "string":
-        return _last_string_params
-    elif data_type == "image":
-        return _last_image_params
-    elif data_type == "binary":
-        return _last_binary_params
-    return None
+# FUNZIONI PER IMMAGINI
 
 def hide_image(img1, img2, lsb=0, msb=8, div=0, backup_file=None):
     """Nasconde un'immagine in un'altra
