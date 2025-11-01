@@ -144,4 +144,125 @@ def get_message(img):
     except:
         raise ValueError("Impossibile decodificare il messaggio dall'immagine. Verifica che contenga davvero un messaggio nascosto")
 
+def setLastNBits(value, bits, n):
+    """Setta gli ultimi n bits di un numero"""
+    value_str = format(value, '08b')
+    if len(bits) < n:
+        n = len(bits)
+    value_str = value_str[:-n] + bits
+    result = int(value_str, 2)
+    result = min(255, max(0, result))
+    return result
 
+def hide_image(img1, img2, lsb=0, msb=8, div=0, backup_file=None):
+    """Nasconde un'immagine in un'altra
+        img1: immagine che nasconde (più grande)
+        img2: immagine da nascondere (più piccola)
+        lsb: numero di bit meno significativi di img1 da modificare
+        msb: numero di bit più significativi di img2 da nascondere"""
+    
+    # check if lsb is valid
+    if lsb < 0 or lsb > 8:
+        raise ValueError("Il valore di LSB deve essere compreso tra 1 e 8 oppure 0 per la modalità automatica")
+    
+    # check if msb is valid
+    if msb < 0 or msb > 8:
+        raise ValueError("Il valore di MSB deve essere compreso tra 1 e 8 oppure 0 per la modalità automatica")
+    
+    # check if lsb is bigger than msb
+    if lsb > msb:
+        raise ValueError("Il valore di LSB deve essere minore di MSB")
+    
+    # determine auto lsb and msb
+    if lsb == 0:
+        lsb = 1
+        while (lsb * img1.width * img1.height * 3) < (msb * img2.width * img2.height * 3):
+            lsb += 1
+            if lsb > 8:
+                raise ValueError(f"Immagine host troppo piccola per nascondere l'altra immagine.\nHost: {img1.width}x{img1.height}\nDa nascondere: {img2.width}x{img2.height}")
+    
+    # check if image is big enough
+    if (lsb * img1.width * img1.height * 3) < (msb * img2.width * img2.height * 3):
+        raise ValueError(f"Immagine host troppo piccola per nascondere l'altra immagine.\nHost: {img1.width}x{img1.height}\nDa nascondere: {img2.width}x{img2.height}")
+
+    # convert image to RGB
+    if img1.mode != "RGB":
+        img1 = img1.convert("RGB")
+    if img2.mode != "RGB":
+        img2 = img2.convert("RGB")
+    
+    # start hiding image
+    print("Nascondendo immagine...")
+    arr1 = np.array(img1).flatten().copy()
+    arr2 = np.array(img2).flatten().copy()
+    
+    if div == 0:
+        div = (len(arr1) * lsb) / (len(arr2) * msb)
+    else:
+        if div * len(arr2) * msb > len(arr1) * lsb:
+            raise ValueError(f"Il valore di DIV ({div}) è eccessivo per queste immagini. Prova con 0 per il calcolo automatico")
+    
+    # Algoritmo migliorato per nascondere l'immagine
+    pos_in_img1 = 0.0
+    bit_buffer = ""
+    
+    for i in range(0, len(arr2), 3):  # Processa ogni pixel di img2 (RGB)
+        if i + 2 >= len(arr2):
+            break
+            
+        # Estrai i bit più significativi da ogni canale di img2
+        r_bits = format(arr2[i], '08b')[:msb]
+        g_bits = format(arr2[i + 1], '08b')[:msb]  
+        b_bits = format(arr2[i + 2], '08b')[:msb]
+        
+        # Aggiungi tutti i bit al buffer
+        bit_buffer += r_bits + g_bits + b_bits
+        
+        # Inserisci i bit in img1 quando ne abbiamo abbastanza
+        while len(bit_buffer) >= lsb and pos_in_img1 < len(arr1):
+            # Prendi lsb bit dal buffer
+            bits_to_hide = bit_buffer[:lsb]
+            bit_buffer = bit_buffer[lsb:]
+            
+            # Nascondili nel pixel corrente di img1
+            pixel_pos = int(pos_in_img1)
+            if pixel_pos < len(arr1):
+                arr1[pixel_pos] = setLastNBits(arr1[pixel_pos], bits_to_hide, lsb)
+            
+            # Avanza nella posizione di img1
+            pos_in_img1 += div
+    
+    # Gestisci eventuali bit rimanenti nel buffer
+    if bit_buffer and pos_in_img1 < len(arr1):
+        # Padda i bit rimanenti con zeri a destra per raggiungere lsb bit
+        while len(bit_buffer) < lsb:
+            bit_buffer += "0"
+        
+        pixel_pos = int(pos_in_img1)
+        if pixel_pos < len(arr1):
+            arr1[pixel_pos] = setLastNBits(arr1[pixel_pos], bit_buffer[:lsb], lsb)
+    
+    # Salva risultato
+    w, h = img2.width, img2.height
+    percentage = format((msb * img2.width * img2.height * 3) / (lsb * img1.width * img1.height * 3) * 100, '.2f')
+    print(f"TERMINATO - Percentuale di pixel usati con lsb={lsb}, msb={msb} e div={div:.2f}: {percentage}%")
+    
+    img1_copy = Image.fromarray(arr1.reshape(img1.height, img1.width, 3))
+    
+    # Salva i parametri per il recupero
+    params = {
+        'lsb': lsb,
+        'msb': msb,
+        'div': div,
+        'width': w,
+        'height': h,
+        'method': 'image',
+        'original_img1_size': (img1.width, img1.height),
+        'original_img2_size': (img2.width, img2.height)
+    }
+    save_backup_data("image", params, backup_file)
+    
+    return (img1_copy, lsb, msb, div, w, h)
+
+def get_image(img, new_img, lsb=None, msb=None, div=None, width=None, height=None, backup_file=None):
+    pass
