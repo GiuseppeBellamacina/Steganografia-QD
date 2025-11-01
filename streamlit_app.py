@@ -234,6 +234,8 @@ if mode == "Nascondere dati":
                             result_img, final_lsb, final_msb, final_div, w, h = result
                             st.success("✅ Immagine nascosta con successo!")
                             
+                            st.info(f"📊 Parametri utilizzati: LSB={final_lsb}, MSB={final_msb}, DIV={final_div:.2f}")
+                            
                             # Mostra anteprima dell'immagine risultato
                             st.image(result_img, caption="Anteprima immagine con immagine nascosta", width=400)
                             
@@ -274,8 +276,8 @@ if mode == "Nascondere dati":
                     st.error(f"❌ Errore: {str(e)}")
             else:
                 st.warning("⚠️ Carica entrambe le immagini!")
-
-# FILE BINARI
+    
+    # FILE BINARI
     elif data_type == "File binari":
         st.subheader("📁 Nascondere File Binario")
         st.info("💡 La compressione riduce la dimensione del file da nascondere")
@@ -400,6 +402,7 @@ else:  # mode == "Recuperare dati"
             st.write(f"**Modalità:** {img.mode}")
     
     st.markdown("---")
+    
     # STRINGHE
     if data_type == "Stringhe":
         st.subheader("📝 Recuperare Stringa")
@@ -439,6 +442,7 @@ else:  # mode == "Recuperare dati"
                     st.error(f"❌ Errore: {str(e)}")
             else:
                 st.warning("⚠️ Carica un'immagine!")
+    
     # IMMAGINI
     elif data_type == "Immagini":
         st.subheader("🖼️ Recuperare Immagine")
@@ -507,6 +511,74 @@ else:  # mode == "Recuperare dati"
                                 os.remove(output_name)
                         else:
                             st.error("❌ Impossibile recuperare l'immagine")
+                    else:
+                        st.error("❌ Errore nel salvare l'immagine")
+                
+                except Exception as e:
+                    st.error(f"❌ Errore: {str(e)}")
+            else:
+                st.warning("⚠️ Carica un'immagine!")
+    
+    # FILE BINARI
+    elif data_type == "File binari":
+        st.subheader("📁 Recuperare File Binario")
+        
+        # Opzioni parametri
+        backup_file_path, use_recent, manual_params = display_backup_options("binary_get", show_manual=True)
+        
+        # Parametri manuali se richiesti
+        zip_mode = n = div = size = None
+        if manual_params:
+            st.subheader("⚙️ Parametri Manuali")
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                zip_mode = st.selectbox(
+                    "ZipMode",
+                    [NO_ZIP, FILE, DIR],
+                    format_func=lambda x: {NO_ZIP: "Nessuna", FILE: "File", DIR: "Directory"}[x],
+                    key="manual_zipmode"
+                )
+            with col2:
+                n = st.number_input("N", min_value=1, max_value=8, value=1, key="manual_n")
+            with col3:
+                div = st.number_input("DIV", min_value=0.1, value=1.0, key="manual_div_bin")
+            with col4:
+                size = st.number_input("SIZE (bytes)", min_value=1, value=1000, key="manual_size")
+        
+        output_name = st.text_input("Nome file output", value="recovered_file.bin", key="bin_recover_output")
+        
+        if st.button("🔓 Recupera File", type="primary"):
+            if hidden_image:
+                try:
+                    # Salva immagine temporaneamente
+                    hidden_path = save_uploaded_file(hidden_image)
+                    if hidden_path:
+                        img = Image.open(hidden_path)
+                        
+                        # Recupera file
+                        with st.spinner("Recuperando file..."):
+                            get_bin_file(img, output_name, zip_mode, n, div, size, backup_file_path)
+                        
+                        if os.path.exists(output_name):
+                            st.success("✅ File recuperato!")
+                            
+                            file_size = os.path.getsize(output_name)
+                            st.write(f"**File recuperato:** {output_name}")
+                            st.write(f"**Dimensione:** {file_size} bytes")
+                            
+                            # Download
+                            with open(output_name, "rb") as f:
+                                st.download_button(
+                                    "📥 Scarica file recuperato",
+                                    f.read(),
+                                    file_name=output_name,
+                                    mime="application/octet-stream"
+                                )
+                            # Rimuovi file temporaneo
+                            os.remove(output_name)
+                        else:
+                            st.error("❌ Impossibile recuperare il file")
                     else:
                         st.error("❌ Errore nel salvare l'immagine")
                 
