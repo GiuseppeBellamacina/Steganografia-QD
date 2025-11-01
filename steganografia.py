@@ -1,5 +1,51 @@
 from PIL import Image
+from os.path import exists
+import pickle
 
+# Variabili globali per il backup dei parametri recenti
+_last_string_params = None
+_last_image_params = None
+_last_binary_params = None
+
+def save_backup_data(data_type, params, backup_file=None):
+    """Salva i parametri di occultamento in un file binario e nelle variabili locali"""
+    global _last_string_params, _last_image_params, _last_binary_params
+    
+    # Salva nelle variabili globali per uso immediato
+    if data_type == "string":
+        _last_string_params = params
+    elif data_type == "image":
+        _last_image_params = params
+    elif data_type == "binary":
+        _last_binary_params = params
+    
+    # Salva su file se specificato
+    if backup_file:
+        try:
+            with open(backup_file, 'wb') as f:
+                backup_data = {
+                    'type': data_type,
+                    'params': params
+                }
+                pickle.dump(backup_data, f)
+            print(f"Parametri salvati in {backup_file}")
+        except Exception as e:
+            raise ValueError(f"Errore nel salvataggio backup: {e}")
+
+def load_backup_data(backup_file):
+    """Carica i parametri di occultamento da un file binario"""
+    try:
+        if exists(backup_file):
+            with open(backup_file, 'rb') as f:
+                backup_data = pickle.load(f)
+            print(f"Parametri caricati da {backup_file}")
+            return backup_data
+        else:
+            print(f"File backup {backup_file} non trovato")
+            return None
+    except Exception as e:
+        raise ValueError(f"Errore nel caricamento backup: {e}")
+    
 def binaryConvert(text):
     """Converte una stringa di testo in una stringa binaria (carattere per carattere)"""
     return ''.join(format(ord(char), '08b') for char in text)
