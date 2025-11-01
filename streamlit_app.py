@@ -366,6 +366,8 @@ if mode == "Nascondere dati":
                                         file_name=backup_file,
                                         mime="application/octet-stream"
                                     )
+                                # Rimuovi file temporaneo
+                                os.remove(backup_file)
                         else:
                             st.error("❌ Errore durante l'occultamento del file")
                     else:
