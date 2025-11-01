@@ -16,12 +16,15 @@ def save_backup_data(data_type, params, backup_file=None):
         _last_string_params = params
     elif data_type == "image":
         _last_image_params = params
+    elif data_type == "binary":
+        _last_binary_params = params
     
-         # Salva su file se specificato
+    # Salva su file se specificato
     if backup_file:
         try:
             with open(backup_file, 'wb') as f:
                 backup_data = {
+                    'type': data_type,
                     'params': params
                 }
                 pickle.dump(backup_data, f)
