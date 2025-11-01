@@ -75,3 +75,26 @@ data_type = st.sidebar.selectbox(
     ["Stringhe", "Immagini", "File binari"]
 )
 
+# NASCONDERE DATI
+if mode == "Nascondere dati":
+    st.header("📥 Nascondere Dati")
+    
+    # Caricamento immagine host
+    st.subheader("🖼️ Immagine di destinazione")
+    host_image = st.file_uploader(
+        "Carica l'immagine su cui nascondere i dati",
+        type=['png', 'jpg', 'jpeg'],
+        key="host_image"
+    )
+    
+    if host_image:
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            st.image(host_image, caption="Immagine di destinazione", width=400)
+        with col2:
+            img = Image.open(host_image)
+            st.write(f"**Dimensioni:** {img.width} x {img.height}")
+            st.write(f"**Modalità:** {img.mode}")
+            st.write(f"**Formato:** {host_image.type}")
+    
+    st.markdown("---")
