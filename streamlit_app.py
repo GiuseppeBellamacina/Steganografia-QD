@@ -173,3 +173,104 @@ if mode == "Nascondere dati":
                     st.error(f"❌ Errore: {str(e)}")
             else:
                 st.warning("⚠️ Carica un'immagine e inserisci un messaggio!")    # IMMAGINI
+    elif data_type == "Immagini":
+        st.subheader("🖼️ Nascondere Immagine")
+        st.info("💡 L'immagine host deve essere più grande di quella da nascondere")
+        
+        secret_image = st.file_uploader(
+            "Carica l'immagine da nascondere",
+            type=['png', 'jpg', 'jpeg'],
+            key="secret_image"
+        )
+        
+        if secret_image:
+            col1, col2 = st.columns(2)
+            with col1:
+                st.image(secret_image, caption="Immagine da nascondere", width=400)
+            with col2:
+                secret_img = Image.open(secret_image)
+                st.write(f"**Dimensioni:** {secret_img.width} x {secret_img.height}")
+                st.write(f"**Modalità:** {secret_img.mode}")
+        
+        # Parametri
+        st.subheader("⚙️ Parametri")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            lsb = st.number_input("LSB (bit da modificare)", min_value=0, max_value=8, value=0, 
+                                 help="0 = automatico")
+        with col2:
+            msb = st.number_input("MSB (bit da nascondere)", min_value=1, max_value=8, value=8)
+        with col3:
+            div = st.number_input("Divisore", min_value=0.0, value=0.0, 
+                                 help="0.0 = automatico")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            output_name = st.text_input("Nome file output", value="image_with_hidden_image.png", key="img_output")
+        with col2:
+            save_backup = st.checkbox("Salva parametri su file", key="img_backup_save")
+            backup_name = ""
+            if save_backup:
+                backup_name = st.text_input("Nome file backup", value="image_backup.dat", key="img_backup_name")
+        
+        if st.button("🔒 Nascondi Immagine", type="primary"):
+            if host_image and secret_image:
+                try:
+                    # Salva immagini temporaneamente
+                    host_path = save_uploaded_file(host_image)
+                    secret_path = save_uploaded_file(secret_image)
+                    
+                    if host_path and secret_path:
+                        img1 = Image.open(host_path)
+                        img2 = Image.open(secret_path)
+                        
+                        # Nascondi immagine
+                        backup_file = backup_name if save_backup else None
+                        with st.spinner("Nascondendo immagine..."):
+                            result = hide_image(img1, img2, lsb, msb, int(div), backup_file)
+                        
+                        if result:  # Controllo successo
+                            result_img, final_lsb, final_msb, final_div, w, h = result
+                            st.success("✅ Immagine nascosta con successo!")
+                            
+                            # Mostra anteprima dell'immagine risultato
+                            st.image(result_img, caption="Anteprima immagine con immagine nascosta", width=400)
+                            
+                            # Converti l'immagine in buffer per il download
+                            img_buffer = io.BytesIO()
+                            result_img.save(img_buffer, format='PNG')
+                            img_buffer.seek()
+                            
+                            # Download risultato
+                            st.download_button(
+                                "📥 Scarica immagine con immagine nascosta",
+                                img_buffer.getvalue(),
+                                file_name=output_name,
+                                mime="image/png"
+                            )
+                            
+                            # Rimuovi file temporaneo se esiste
+                            if os.path.exists(output_name):
+                                os.remove(output_name)
+                            
+                            # Download backup
+                            if backup_file and os.path.exists(backup_file):
+                                with open(backup_file, "rb") as f:
+                                    st.download_button(
+                                        "💾 Scarica file backup parametri",
+                                        f.read(),
+                                        file_name=backup_file,
+                                        mime="application/octet-stream"
+                                    )
+                                # Rimuovi file temporaneo
+                                os.remove(backup_file)
+                        else:
+                            st.error("❌ Errore durante l'occultamento dell'immagine")
+                    else:
+                        st.error("❌ Errore nel salvare le immagini")
+                
+                except Exception as e:
+                    st.error(f"❌ Errore: {str(e)}")
+            else:
+                st.warning("⚠️ Carica entrambe le immagini!")
