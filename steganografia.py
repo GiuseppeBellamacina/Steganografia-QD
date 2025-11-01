@@ -418,3 +418,128 @@ def get_image(img, new_img, lsb=None, msb=None, div=None, width=None, height=Non
         return res_img
     except Exception as e:
         raise ValueError(f"Impossibile ricostruire l'immagine nascosta. Verifica i parametri di recupero. Errore: {str(e)}")
+
+# FUNZIONI PER FILE BINARI
+
+def string_to_bytes(bit_string):
+    """Converte una stringa di bit in bytes"""
+    byte_array = bytearray()
+    for i in range(0, len(bit_string), 8):
+        byte = bit_string[i:i+8]
+        if len(byte) == 8:
+            byte_array.append(int(byte, 2))
+    return byte_array
+
+def hide_bin_file(img, file, zipMode=NO_ZIP, n=0, div=0, backup_file=None):
+    """Nasconde un file binario o una cartella"""
+    # check if n is in range
+    if n < 0 or n > 8:
+        raise ValueError("Il valore di N deve essere compreso tra 1 e 8, oppure 0 per la modalità automatica")
+    
+    # determine channels
+    ch = 3
+    if img.mode == "RGBA":
+        ch = 4
+    if img.mode != "RGB" and img.mode != "RGBA":
+        img = img.convert("RGB")
+    
+    # check if zipMode is in range
+    if zipMode not in [0, 1, 2]:
+        raise ValueError("La modalità di compressione deve essere 0 (nessuna), 1 (file) o 2 (directory)")
+    
+    # zip file if zipMode is 1
+    if zipMode == FILE:
+        print("Compressione file...")
+        with zipfile.ZipFile('tmp.zip', 'w') as zf:
+            zf.write(file)
+        file = 'tmp.zip'
+        print("File compresso")
+    
+    # zip directory if zipMode is 2
+    elif zipMode == DIR:
+        print("Compressione directory...")
+        zipf = zipfile.ZipFile('tmp.zip', 'w', zipfile.ZIP_DEFLATED)
+        zipdir(file, zipf)
+        file = 'tmp.zip'
+        zipf.close()
+        print("Directory compressa")
+    
+    # get file size
+    total_bytes = getsize(file)
+    
+    # auto n
+    if n == 0:
+        while (img.width * img.height) * ch * n < total_bytes * 8:
+            n += 1
+            if n > 8:
+                raise ValueError(f"Immagine troppo piccola per nascondere il file.\nFile: {total_bytes} bytes\nImmagine: {img.width}x{img.height}")
+    
+    # check if image is big enough
+    elif (img.width * img.height) * ch * n < total_bytes * 8:
+        raise ValueError(f"Immagine troppo piccola per nascondere il file.\nFile: {total_bytes} bytes\nImmagine: {img.width}x{img.height}")
+
+    # convert image to array
+    arr = np.array(img).flatten().copy()
+    total_pixels_ch = len(arr)
+    
+    # check if div value is valid
+    if div == 0:
+        div = findDiv(total_pixels_ch, file, n)
+    else:
+        if total_pixels_ch * n < div * total_bytes * 8:
+            raise ValueError(f"Il valore di DIV ({div}) è eccessivo per questo file. Prova con 0 per il calcolo automatico")
+    
+    # start hiding file
+    print("Nascondendo file...")
+    rsv = ""
+    ind, pos = 0, 0
+    
+    # read file
+    with open(file, 'rb') as f:
+        f.seek(0)
+        for i in range(total_bytes):
+            byte = f.read(1) # read byte
+            bits = format(ord(byte), '08b') # convert byte into string of bits
+            bits = rsv + bits
+            rsv = ""
+            while len(bits) >= n:
+                tmp = bits[:n]
+                bits = bits[n:]
+                # set last n bits of pixel
+                arr[pos] = setLastNBits(arr[pos], tmp, n)
+                ind += div
+                pos = round(ind)
+            if len(bits) > 0:
+                rsv = bits
+    
+    f.close()
+    while len(rsv) > 0:
+        tmp = rsv[:n]
+        rsv = rsv[n:]
+        # set last n bits of pixel
+        arr[pos] = setLastNBits(arr[pos], tmp, n)
+        ind += div
+        pos = round(ind)
+    
+    percentage = format(((total_bytes * 8) / ((img.width * img.height) * ch * n)) * 100, '.2f')
+    print(f"TERMINATO - Percentuale di pixel usati con n={n} e div={div}: {percentage}%")
+    
+    if zipMode != NO_ZIP:
+        # delete tmp.zip
+        remove('tmp.zip')
+    
+    img_copy = Image.fromarray(arr.reshape(img.height, img.width, ch))
+    
+    # Salva i parametri per il recupero
+    params = {
+        'n': n,
+        'div': div,
+        'size': total_bytes,
+        'zipMode': zipMode,
+        'method': 'binary',
+        'original_file': file,
+        'channels': ch
+    }
+    save_backup_data("binary", params, backup_file)
+    
+    return (img_copy, n, div, total_bytes)
