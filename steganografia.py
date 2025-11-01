@@ -41,7 +41,7 @@ def hide_message(img, msg):
     img_copy = img.copy()
     mat = img_copy.load()
     msg_binary = binaryConvert(msg)
-    msg_binary = msg_binary + "0000"  # terminatore
+    msg_binary = msg_binary + "00000000"  # terminatore
     msg_list = list(msg_binary)
     
     for i in range(img.width):
@@ -79,7 +79,7 @@ def get_message(img):
                 stop.append(bit)
                 msg.append(bit)
                 if len(stop) == 8:
-                    if ''.join(stop) == "0000":
+                    if ''.join(stop) == "00000000":
                         msg = ''.join(msg)
                         msg = msg[:-8]
                         msg = binaryConvertBack(msg)
