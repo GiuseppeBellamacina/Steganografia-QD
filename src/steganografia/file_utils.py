@@ -19,3 +19,8 @@ def find_div(dim: int, file_path: str, n: int) -> float:
     div = (image_dim - n) / (getsize(file_path) * 8)
     return div
 
+def zip_directory(path: str, ziph: zipfile.ZipFile) -> None:
+    """Comprime una directory"""
+    for root, _, files in walk(path):
+        for file in files:
+            ziph.write(file) 
