@@ -23,4 +23,6 @@ def zip_directory(path: str, ziph: zipfile.ZipFile) -> None:
     """Comprime una directory"""
     for root, _, files in walk(path):
         for file in files:
-            ziph.write(file) 
+            file_path = join(root, file)
+            arcname = relpath(file_path, path)
+            ziph.write(file_path, arcname)
