@@ -153,3 +153,41 @@ class BinarySteganography:
             # Pulizia file temporanei
             if compression_mode != CompressionMode.NO_ZIP:
                 cleanup_temp_files()
+
+    @staticmethod
+    def _decompress_file(zip_path: str, output_path: str) -> None:
+        """Decomprime un file singolo"""
+        import zipfile
+        from os import remove
+
+        print("Decompressione file...")
+        try:
+            with zipfile.ZipFile(zip_path, "r") as zf:
+                old_path = zf.namelist()[0]
+                file_data = zf.read(old_path)
+            remove(zip_path)
+
+            with zipfile.ZipFile(zip_path, "w") as zf:
+                zf.writestr(output_path, file_data)
+
+            with zipfile.ZipFile(zip_path, "r") as zf:
+                zf.extractall()
+            remove(zip_path)
+            print(f"FILE TROVATO - File salvato come {output_path}")
+        except Exception as e:
+            raise ValueError(f"Errore durante l'estrazione del file: {e}")
+
+    @staticmethod
+    def _decompress_directory(zip_path: str, output_path: str) -> None:
+        """Decomprime una directory"""
+        import zipfile
+        from os import remove
+
+        print("Decompressione directory...")
+        try:
+            with zipfile.ZipFile(zip_path, "r") as zf:
+                zf.extractall(output_path)
+            remove(zip_path)
+            print(f"DIRECTORY TROVATA - Directory salvata come {output_path}")
+        except Exception as e:
+            raise ValueError(f"Errore durante l'estrazione della directory: {e}")
