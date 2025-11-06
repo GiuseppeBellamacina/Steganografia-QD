@@ -155,6 +155,117 @@ class BinarySteganography:
                 cleanup_temp_files()
 
     @staticmethod
+    def get_binary_file(
+        img: Image.Image,
+        output_path: str,
+        compression_mode: Optional[int] = None,
+        n: Optional[int] = None,
+        div: Optional[float] = None,
+        size: Optional[int] = None,
+        backup_file: Optional[str] = None,
+    ) -> None:
+        """
+        Recupera un file binario da un'immagine
+
+        Args:
+            img: Immagine che contiene il file
+            output_path: Percorso dove salvare il file recuperato
+            compression_mode, n, div, size: Parametri per il recupero
+            backup_file: File di backup dei parametri
+        """
+        # Recupera parametri automaticamente se non forniti
+        if any(param is None for param in [compression_mode, n, div, size]):
+            print("Alcuni parametri mancanti, cercando nei backup...")
+
+            # Controlla se esistono parametri di backup
+            backup_data = None
+            if backup_file:
+                backup_data = backup_system.load_backup_data(backup_file)
+
+            # Se non ci sono backup file, controlla le variabili locali
+            if not backup_data:
+                recent_params = backup_system.get_last_params(DataType.BINARY)
+                if recent_params:
+                    print(
+                        "Usando parametri dall'ultima operazione di occultamento file binari"
+                    )
+                    backup_data = {"type": DataType.BINARY, "params": recent_params}
+
+            if backup_data and "params" in backup_data:
+                params = backup_data["params"]
+                compression_mode = (
+                    compression_mode
+                    if compression_mode is not None
+                    else params.get("zipMode")
+                )
+                n = n if n is not None else params.get("n")
+                div = div if div is not None else params.get("div")
+                size = size if size is not None else params.get("size")
+                print(
+                    f"Parametri recuperati: zipMode={compression_mode}, n={n}, div={div:.2f}, size={size}"
+                )
+            else:
+                raise ValueError(ErrorMessages.PARAMS_MISSING)
+
+        # Verifica parametri
+        ParameterValidator.validate_recovery_params(compression_mode, n, div, size)
+
+        # Assert per il type checker
+        assert (
+            compression_mode is not None
+            and n is not None
+            and div is not None
+            and size is not None
+        )
+
+        # Validazioni specifiche
+        ParameterValidator.validate_n(n)
+        ParameterValidator.validate_compression_mode(compression_mode)
+
+        print("Cercando file...")
+
+        # Inizia recupero file
+        arr = np.array(img).flatten().copy()
+        bits, res = "", ""
+        ind, pos = 0.0, 0
+        diff = size * 8
+        err = round(size * 8 / n)
+
+        # Gestione file compresso
+        working_output = output_path
+        if compression_mode != CompressionMode.NO_ZIP:
+            res = output_path
+            working_output = "tmp.zip"
+
+        with open(working_output, "wb") as file:
+            for _ in range(err):
+                if diff < n:
+                    bits += format(arr[pos], "08b")[-diff:]
+                else:
+                    bits += format(arr[pos], "08b")[-n:]
+
+                if len(bits) >= 1024:
+                    wr = bits[:1024]
+                    wr = string_to_bytes(wr)
+                    file.write(wr)
+                    bits = bits[1024:]
+
+                ind += div
+                pos = round(ind)
+
+            if bits:
+                bits = string_to_bytes(bits)
+                file.write(bits)
+
+        # Gestione decompressione
+        if compression_mode == CompressionMode.NO_ZIP:
+            print(f"FILE TROVATO - File salvato come {working_output}")
+        elif compression_mode == CompressionMode.FILE:
+            BinarySteganography._decompress_file(working_output, res)
+        else:  # CompressionMode.DIR
+            BinarySteganography._decompress_directory(working_output, res)
+
+    @staticmethod
     def _decompress_file(zip_path: str, output_path: str) -> None:
         """Decomprime un file singolo"""
         import zipfile
