@@ -95,3 +95,19 @@ def get_bin_file(
     BinarySteganography.get_binary_file(
         img, output_path, compression_mode, n, div, size, backup_file
     )
+
+
+# API per il backup
+def load_backup_data(backup_file: str):
+    """Carica i parametri da un file di backup"""
+    return backup_system.load_backup_data(backup_file)
+
+
+def get_last_params(data_type: str):
+    """Ottiene gli ultimi parametri usati"""
+    return backup_system.get_last_params(data_type)
+
+
+def save_image(img: Image.Image, file_path: str) -> bool:
+    """Salva un'immagine su disco"""
+    return save_image(img, file_path)
