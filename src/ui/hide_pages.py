@@ -45,21 +45,15 @@ class HideDataPages:
             placeholder="Scrivi qui il tuo messaggio segreto...",
         )
 
-        col1, col2 = st.columns(2)
-        with col1:
-            output_name = st.text_input(
-                "Nome file output", value="image_with_message.png"
-            )
-        with col2:
-            save_backup = st.checkbox("Salva parametri su file")
-            backup_name = ""
-            if save_backup:
-                backup_name = st.text_input(
-                    "Nome file backup", value="string_backup.dat"
-                )
+        output_name = st.text_input(
+            "📁 Nome file output", value="image_with_message.png"
+        )
 
         if st.button("🔒 Nascondi Messaggio", type="primary"):
             if host_image and message:
+                # Pulisci risultati precedenti
+                if "hide_string_result" in st.session_state:
+                    del st.session_state["hide_string_result"]
                 try:
                     # Salva immagine temporaneamente
                     host_path = save_uploaded_file(host_image)
@@ -67,45 +61,24 @@ class HideDataPages:
                         img = Image.open(host_path)
 
                         # Nascondi messaggio
-                        backup_file = backup_name if save_backup else None
                         with st.spinner("Nascondendo messaggio..."):
-                            result_img = hide_message(img, message, backup_file)
+                            result_img = hide_message(img, message)
 
                         st.success("✅ Messaggio nascosto con successo!")
 
-                        # Mostra anteprima dell'immagine risultato
-                        st.image(
-                            result_img,
-                            caption="Anteprima immagine con messaggio nascosto",
-                            width=400,
-                        )
-
-                        # Converti l'immagine in buffer per il download
+                        # Salva il risultato per il download
                         img_buffer = io.BytesIO()
                         result_img.save(img_buffer, format="PNG")
-                        img_buffer.seek(0)
 
-                        # Download risultato
-                        create_download_button(
-                            img_buffer.getvalue(),
-                            output_name,
-                            "image/png",
-                            "📥 Scarica immagine con messaggio nascosto",
-                        )
+                        # Salva in session_state per evitare reload (include anteprima)
+                        st.session_state["hide_string_result"] = {
+                            "data": img_buffer.getvalue(),
+                            "filename": output_name,
+                            "preview_image": result_img,  # Mantieni l'anteprima
+                        }
 
                         # Cleanup
                         cleanup_temp_file(output_name)
-
-                        # Download file backup se creato
-                        if backup_file and os.path.exists(backup_file):
-                            with open(backup_file, "rb") as f:
-                                create_download_button(
-                                    f.read(),
-                                    backup_file,
-                                    "application/octet-stream",
-                                    "💾 Scarica file backup parametri",
-                                )
-                            cleanup_temp_file(backup_file)
                     else:
                         st.error("❌ Errore nel salvare l'immagine")
 
@@ -113,6 +86,28 @@ class HideDataPages:
                     st.error(f"❌ Errore: {str(e)}")
             else:
                 st.warning("⚠️ Carica un'immagine e inserisci un messaggio!")
+
+        # Sezione download se ci sono risultati
+        if "hide_string_result" in st.session_state:
+            st.markdown("---")
+            st.subheader("📥 Download Risultati")
+
+            result_data = st.session_state["hide_string_result"]
+
+            # Mostra sempre l'anteprima dell'immagine risultato
+            if "preview_image" in result_data:
+                st.image(
+                    result_data["preview_image"],
+                    caption="Anteprima immagine con messaggio nascosto",
+                    width=400,
+                )
+
+            create_download_button(
+                result_data["data"],
+                result_data["filename"],
+                "image/png",
+                "📥 Scarica immagine con messaggio nascosto",
+            )
 
     @staticmethod
     def hide_image_page():
@@ -223,6 +218,9 @@ class HideDataPages:
 
         if st.button("🔒 Nascondi Immagine", type="primary"):
             if host_image and secret_image:
+                # Pulisci risultati precedenti
+                if "hide_image_results" in st.session_state:
+                    del st.session_state["hide_image_results"]
                 try:
                     # Salva immagini temporaneamente
                     host_path = save_uploaded_file(host_image)
@@ -243,43 +241,36 @@ class HideDataPages:
                             result_img, final_lsb, final_msb, final_div, _, _ = result
                             st.success("✅ Immagine nascosta con successo!")
 
-                            st.info(
-                                f"📊 Parametri utilizzati: LSB={final_lsb}, MSB={final_msb}, DIV={final_div:.2f}"
-                            )
-
-                            # Mostra anteprima dell'immagine risultato
-                            st.image(
-                                result_img,
-                                caption="Anteprima immagine con immagine nascosta",
-                                width=400,
-                            )
-
-                            # Converti l'immagine in buffer per il download
+                            # Salva risultati per il download
                             img_buffer = io.BytesIO()
                             result_img.save(img_buffer, format="PNG")
-                            img_buffer.seek(0)
 
-                            # Download risultato
-                            create_download_button(
-                                img_buffer.getvalue(),
-                                output_name,
-                                "image/png",
-                                "📥 Scarica immagine con immagine nascosta",
-                            )
+                            downloads = {
+                                "image": {
+                                    "data": img_buffer.getvalue(),
+                                    "filename": output_name,
+                                    "mime": "image/png",
+                                    "label": "📥 Scarica immagine con immagine nascosta",
+                                },
+                                "preview_image": result_img,  # Mantieni anteprima
+                                "preview_info": f"📊 Parametri utilizzati: LSB={final_lsb}, MSB={final_msb}, DIV={final_div:.2f}",
+                            }
+
+                            # Aggiungi backup se richiesto
+                            if backup_file and os.path.exists(backup_file):
+                                with open(backup_file, "rb") as f:
+                                    downloads["backup"] = {
+                                        "data": f.read(),
+                                        "filename": backup_file,
+                                        "mime": "application/octet-stream",
+                                        "label": "💾 Scarica file backup parametri",
+                                    }
+                                cleanup_temp_file(backup_file)
+
+                            st.session_state["hide_image_results"] = downloads
 
                             # Cleanup
                             cleanup_temp_file(output_name)
-
-                            # Download backup
-                            if backup_file and os.path.exists(backup_file):
-                                with open(backup_file, "rb") as f:
-                                    create_download_button(
-                                        f.read(),
-                                        backup_file,
-                                        "application/octet-stream",
-                                        "💾 Scarica file backup parametri",
-                                    )
-                                cleanup_temp_file(backup_file)
                         else:
                             st.error("❌ Errore durante l'occultamento dell'immagine")
                     else:
@@ -289,6 +280,43 @@ class HideDataPages:
                     st.error(f"❌ Errore: {str(e)}")
             else:
                 st.warning("⚠️ Carica entrambe le immagini!")
+
+        # Sezione download se ci sono risultati
+        if "hide_image_results" in st.session_state:
+            st.markdown("---")
+            st.subheader("📥 Download Risultati")
+
+            downloads = st.session_state["hide_image_results"]
+
+            # Mostra sempre l'anteprima e info
+            if "preview_image" in downloads:
+                if "preview_info" in downloads:
+                    st.info(downloads["preview_info"])
+                st.image(
+                    downloads["preview_image"],
+                    caption="Anteprima immagine con immagine nascosta",
+                    width=400,
+                )
+
+            # Download immagine
+            if "image" in downloads:
+                img_data = downloads["image"]
+                create_download_button(
+                    img_data["data"],
+                    img_data["filename"],
+                    img_data["mime"],
+                    img_data["label"],
+                )
+
+            # Download backup se presente
+            if "backup" in downloads:
+                backup_data = downloads["backup"]
+                create_download_button(
+                    backup_data["data"],
+                    backup_data["filename"],
+                    backup_data["mime"],
+                    backup_data["label"],
+                )
 
     @staticmethod
     def hide_binary_page():
@@ -370,6 +398,9 @@ class HideDataPages:
 
         if st.button("🔒 Nascondi File", type="primary"):
             if host_image and secret_file:
+                # Pulisci risultati precedenti
+                if "hide_binary_results" in st.session_state:
+                    del st.session_state["hide_binary_results"]
                 try:
                     # Salva file temporaneamente
                     host_path = save_uploaded_file(host_image)
@@ -389,43 +420,36 @@ class HideDataPages:
                             result_img, final_n, final_div, size = result
                             st.success("✅ File nascosto con successo!")
 
-                            st.info(
-                                f"📊 Parametri utilizzati: N={final_n}, DIV={final_div:.2f}, SIZE={size} bytes"
-                            )
-
-                            # Mostra anteprima dell'immagine risultato
-                            st.image(
-                                result_img,
-                                caption="Anteprima immagine con file nascosto",
-                                width=400,
-                            )
-
-                            # Converti l'immagine in buffer per il download
+                            # Salva risultati per il download
                             img_buffer = io.BytesIO()
                             result_img.save(img_buffer, format="PNG")
-                            img_buffer.seek(0)
 
-                            # Download risultato
-                            create_download_button(
-                                img_buffer.getvalue(),
-                                output_name,
-                                "image/png",
-                                "📥 Scarica immagine con file nascosto",
-                            )
+                            downloads = {
+                                "image": {
+                                    "data": img_buffer.getvalue(),
+                                    "filename": output_name,
+                                    "mime": "image/png",
+                                    "label": "📥 Scarica immagine con file nascosto",
+                                },
+                                "preview_image": result_img,  # Mantieni anteprima
+                                "preview_info": f"📊 Parametri utilizzati: N={final_n}, DIV={final_div:.2f}, SIZE={size} bytes",
+                            }
+
+                            # Aggiungi backup se richiesto
+                            if backup_file and os.path.exists(backup_file):
+                                with open(backup_file, "rb") as f:
+                                    downloads["backup"] = {
+                                        "data": f.read(),
+                                        "filename": backup_file,
+                                        "mime": "application/octet-stream",
+                                        "label": "💾 Scarica file backup parametri",
+                                    }
+                                cleanup_temp_file(backup_file)
+
+                            st.session_state["hide_binary_results"] = downloads
 
                             # Cleanup
                             cleanup_temp_file(output_name)
-
-                            # Download backup
-                            if backup_file and os.path.exists(backup_file):
-                                with open(backup_file, "rb") as f:
-                                    create_download_button(
-                                        f.read(),
-                                        backup_file,
-                                        "application/octet-stream",
-                                        "💾 Scarica file backup parametri",
-                                    )
-                                cleanup_temp_file(backup_file)
                         else:
                             st.error("❌ Errore durante l'occultamento del file")
                     else:
@@ -435,3 +459,40 @@ class HideDataPages:
                     st.error(f"❌ Errore: {str(e)}")
             else:
                 st.warning("⚠️ Carica un'immagine e un file!")
+
+        # Sezione download se ci sono risultati
+        if "hide_binary_results" in st.session_state:
+            st.markdown("---")
+            st.subheader("📥 Download Risultati")
+
+            downloads = st.session_state["hide_binary_results"]
+
+            # Mostra sempre l'anteprima e info
+            if "preview_image" in downloads:
+                if "preview_info" in downloads:
+                    st.info(downloads["preview_info"])
+                st.image(
+                    downloads["preview_image"],
+                    caption="Anteprima immagine con file nascosto",
+                    width=400,
+                )
+
+            # Download immagine
+            if "image" in downloads:
+                img_data = downloads["image"]
+                create_download_button(
+                    img_data["data"],
+                    img_data["filename"],
+                    img_data["mime"],
+                    img_data["label"],
+                )
+
+            # Download backup se presente
+            if "backup" in downloads:
+                backup_data = downloads["backup"]
+                create_download_button(
+                    backup_data["data"],
+                    backup_data["filename"],
+                    backup_data["mime"],
+                    backup_data["label"],
+                )

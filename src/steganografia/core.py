@@ -14,7 +14,7 @@ from config.constants import CompressionMode
 
 from .backup import backup_system
 from .binary_operations import BinarySteganography
-from .file_utils import save_image
+from .file_utils import _save_image
 from .image_operations import ImageSteganography
 from .string_operations import StringSteganography
 
@@ -111,4 +111,4 @@ def get_last_params(data_type: str):
 
 def save_image(img: Image.Image, file_path: str) -> bool:
     """Salva un'immagine su disco"""
-    return save_image(img, file_path)
+    return _save_image(img, file_path)

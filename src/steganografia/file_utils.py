@@ -63,7 +63,7 @@ def cleanup_temp_files() -> None:
         remove("tmp.zip")
 
 
-def save_image(img, file_path: str) -> bool:
+def _save_image(img, file_path: str) -> bool:
     """Salva un'immagine PIL su disco"""
     try:
         img.save(file_path)
