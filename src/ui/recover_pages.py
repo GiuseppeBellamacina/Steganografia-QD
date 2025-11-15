@@ -91,3 +91,57 @@ def recover_string_page():
                     st.error(f"❌ Errore: {str(e)}")
             else:
                 st.warning("⚠️ Carica un'immagine!")
+                def recover_image_page():
+        """Pagina per recuperare immagini"""
+        from src.steganografia import get_image
+
+        st.subheader("🖼️ Recuperare Immagine")
+
+        # Upload dell'immagine con dati nascosti
+        hidden_image = st.file_uploader(
+            "🖼️ Carica l'immagine con immagine nascosta:",
+            type=["png", "jpg", "jpeg"],
+            key="recover_image_hidden_image",
+        )
+
+        # Mostra anteprima dell'immagine
+        if hidden_image:
+            from .image_utils import ImageDisplay
+
+            ImageDisplay.show_resized_image(
+                hidden_image, "🔒 Immagine con Dati Nascosti", max_width=400
+            )
+
+        # Opzioni parametri
+        backup_file_path, _, manual_params = display_backup_options(
+            "image_get", show_manual=True
+        )
+
+        # Parametri manuali se richiesti
+        lsb = msb = div = width = height = None
+        if manual_params:
+            st.subheader("⚙️ Parametri Manuali")
+            col1, col2, col3, col4, col5 = st.columns(5)
+
+            with col1:
+                lsb = st.number_input(
+                    "LSB", min_value=1, max_value=8, value=1, key="manual_lsb"
+                )
+            with col2:
+                msb = st.number_input(
+                    "MSB", min_value=1, max_value=8, value=8, key="manual_msb"
+                )
+            with col3:
+                div = st.number_input("DIV", min_value=0.1, value=1.0, key="manual_div")
+            with col4:
+                width = st.number_input(
+                    "Larghezza", min_value=1, value=100, key="manual_width"
+                )
+            with col5:
+                height = st.number_input(
+                    "Altezza", min_value=1, value=100, key="manual_height"
+                )
+
+        output_name = st.text_input(
+            "Nome file output", value="recovered_image.png", key="img_recover_output"
+        )
