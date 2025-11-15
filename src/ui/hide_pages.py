@@ -181,3 +181,108 @@ def hide_string_page():
                     st.success(
                         f"✅ **Dimensioni compatibili**: L'immagine host ({host_pixels:,} pixel) è {host_pixels/secret_pixels:.1f}x più grande dell'immagine da nascondere ({secret_pixels:,} pixel)"
                     )
+                    
+        # Parametri
+        st.subheader("⚙️ Parametri")
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            lsb = st.number_input(
+                "LSB (bit da modificare)",
+                min_value=0,
+                max_value=8,
+                value=0,
+                help="0 = automatico",
+            )
+        with col2:
+            msb = st.number_input(
+                "MSB (bit da nascondere)", min_value=1, max_value=8, value=8
+            )
+        with col3:
+            div = st.number_input(
+                "Divisore", min_value=0.0, value=0.0, help="0.0 = automatico"
+            )
+
+        col1, col2 = st.columns(2)
+        with col1:
+            output_name = st.text_input(
+                "Nome file output",
+                value="image_with_hidden_image.png",
+                key="img_output",
+            )
+        with col2:
+            save_backup = st.checkbox("Salva parametri su file", key="img_backup_save")
+            backup_name = ""
+            if save_backup:
+                backup_name = st.text_input(
+                    "Nome file backup", value="image_backup.dat", key="img_backup_name"
+                )
+
+        if st.button("🔒 Nascondi Immagine", type="primary"):
+            if host_image and secret_image:
+                try:
+                    # Salva immagini temporaneamente
+                    host_path = save_uploaded_file(host_image)
+                    secret_path = save_uploaded_file(secret_image)
+
+                    if host_path and secret_path:
+                        img1 = Image.open(host_path)
+                        img2 = Image.open(secret_path)
+
+                        # Nascondi immagine
+                        backup_file = backup_name if save_backup else None
+                        with st.spinner("Nascondendo immagine..."):
+                            result = hide_image(
+                                img1, img2, lsb, msb, int(div), backup_file
+                            )
+
+                        if result:  # Controllo successo
+                            result_img, final_lsb, final_msb, final_div, _, _ = result
+                            st.success("✅ Immagine nascosta con successo!")
+
+                            st.info(
+                                f"📊 Parametri utilizzati: LSB={final_lsb}, MSB={final_msb}, DIV={final_div:.2f}"
+                            )
+
+                            # Mostra anteprima dell'immagine risultato
+                            st.image(
+                                result_img,
+                                caption="Anteprima immagine con immagine nascosta",
+                                width=400,
+                            )
+
+                            # Converti l'immagine in buffer per il download
+                            img_buffer = io.BytesIO()
+                            result_img.save(img_buffer, format="PNG")
+                            img_buffer.seek(0)
+
+                            # Download risultato
+                            create_download_button(
+                                img_buffer.getvalue(),
+                                output_name,
+                                "image/png",
+                                "📥 Scarica immagine con immagine nascosta",
+                            )
+
+                            # Cleanup
+                            cleanup_temp_file(output_name)
+
+                            # Download backup
+                            if backup_file and os.path.exists(backup_file):
+                                with open(backup_file, "rb") as f:
+                                    create_download_button(
+                                        f.read(),
+                                        backup_file,
+                                        "application/octet-stream",
+                                        "💾 Scarica file backup parametri",
+                                    )
+                                cleanup_temp_file(backup_file)
+                        else:
+                            st.error("❌ Errore durante l'occultamento dell'immagine")
+                    else:
+                        st.error("❌ Errore nel salvare le immagini")
+
+                except Exception as e:
+                    st.error(f"❌ Errore: {str(e)}")
+            else:
+                st.warning("⚠️ Carica entrambe le immagini!")
