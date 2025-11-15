@@ -1,106 +1,278 @@
-# Steganografia-QD
+# 🔒 Steganografia
 
-Applicazione di steganografia LSB per nascondere e recuperare dati (stringhe, immagini, file binari) all'interno di immagini.
+## Applicazione per Nascondere Dati nelle Immagini
 
-## Descrizione
+Un'applicazione completa per la steganografia che permette di nascondere e recuperare diversi tipi di dati (stringhe, immagini, file binari) all'interno di immagini utilizzando tecniche LSB (Least Significant Bit).
 
-Il progetto implementa tecniche di steganografia basate su **Least Significant Bit (LSB)** per occultare informazioni in immagini PNG/JPG senza alterazioni visibili.
+## 📋 Indice
 
-### Funzionalità principali
+- [Caratteristiche](#caratteristiche)
+- [Architettura del Progetto](#architettura-del-progetto)
+- [Installazione](#installazione)
+- [Utilizzo](#utilizzo)
+- [API](#api)
+- [Testing](#testing)
+- [Struttura del Progetto](#struttura-del-progetto)
+- [Contribuire](#contribuire)
+- [Licenza](#licenza)
 
-- **Stringhe**: Nascondi messaggi di testo in immagini
-- **Immagini**: Nascondi un'immagine dentro un'altra
-- **File binari**: Nascondi file arbitrari (con supporto compressione ZIP)
-- **Backup parametri**: Salvataggio automatico dei parametri per facilitare il recupero
+## ✨ Caratteristiche
 
-## File principali
+### Tipi di Dati Supportati
 
-### `steganografia.py`
+- **Stringhe**: Nasconde testo semplice all'interno delle immagini
+- **Immagini**: Nasconde un'immagine all'interno di un'altra
+- **File Binari**: Supporta qualsiasi tipo di file binario con opzioni di compressione
 
-Modulo core con le funzioni di steganografia:
+### Modalità di Compressione
 
-- `hide_message(img, msg, backup_file)` - Nasconde stringhe
-- `get_message(img, backup_file)` - Recupera stringhe
-- `hide_image(img1, img2, lsb, msb, div, backup_file)` - Nasconde immagini
-- `get_image(img, new_img, lsb, msb, div, width, height, backup_file)` - Recupera immagini
-- `hide_bin_file(img, file, zipMode, n, div, backup_file)` - Nasconde file binari
-- `get_bin_file(img, new_file_path, zipMode, n, div, size, backup_file)` - Recupera file binari
+- **NO_ZIP**: Nessuna compressione
+- **FILE**: Compressione di singoli file
+- **DIR**: Compressione di intere directory
 
-**Parametri chiave:**
+### Funzionalità Avanzate
 
-- `lsb/n`: Numero di bit meno significativi da modificare nell'immagine host
-- `msb`: Numero di bit più significativi da estrarre dai dati da nascondere
-- `div`: Fattore di distribuzione dei dati (0 = automatico)
-- `backup_file`: Path del file .dat per salvare i parametri
+- 💾 **Backup Automatico**: Sistema intelligente di recupero parametri
+- 🎨 **Interfaccia Intuitiva**: UI Streamlit user-friendly
+- 🔄 **Conversioni Automatiche**: Gestione formati RGB/RGBA/Grayscale
+- 🧪 **Alta Qualità**: Test coverage >75% per affidabilità garantita
+- 🛡️ **Validazione Robusta**: Controlli completi su input e parametri
+- 🧹 **Clean Architecture**: Codice modulare e manutenibile
 
-### `streamlit_app.py`
+## 🏗️ Architettura del Progetto
 
-Interfaccia web Streamlit con due modalità operative:
+Il progetto segue un'architettura modulare con separazione delle responsabilità:
 
-**Modalità "Nascondere dati":**
+```
+├── Frontend (UI)
+│   ├── Streamlit App (app.py)
+│   └── UI Components (src/ui/)
+├── Core Business Logic
+│   └── Steganografia Operations (src/steganografia/)
+├── Configuration
+│   └── Constants & Settings (config/)
+└── Testing
+    └── Comprehensive Test Suite (tests/)
+```
 
-1. Carica immagine host
-2. Carica/inserisci dati da nascondere
-3. Configura parametri (opzionale - automatico per default)
-4. Salva backup parametri (opzionale)
-5. Scarica risultato
+## 🚀 Installazione
 
-**Modalità "Recuperare dati":**
+### Prerequisiti
 
-1. Carica immagine con dati nascosti
-2. Scegli fonte parametri:
-   - Automatico (variabili recenti)
-   - File backup (.dat)
-   - Inserimento manuale
-3. Scarica dati recuperati
+- Python 3.7+
+- pip (package manager)
 
-## Installazione
+### Setup Rapido
+
+1. **Clona il repository:**
+
+```bash
+git clone https://github.com/GiuseppeBellamacina/Steganografia-QD.git
+cd Steganografia-QD
+```
+
+2. **Installa le dipendenze:**
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Utilizzo
-
-### Interfaccia web (Streamlit)
+3. **Avvia l'applicazione:**
 
 ```bash
-streamlit run streamlit_app.py
+streamlit run app.py
 ```
 
-### Uso programmatico
+### Dipendenze Principali
 
-```python
-from PIL import Image
-from steganografia import hide_message, get_message
+- `numpy`: Operazioni matematiche su array
+- `pillow`: Manipolazione delle immagini
+- `streamlit`: Interfaccia web interattiva
 
-# Nascondere un messaggio
-img = Image.open('host.png')
-result = hide_message(img, "Messaggio segreto", "backup.dat")
-result.save('output.png')
+## 💻 Utilizzo
 
-# Recuperare il messaggio
-img_hidden = Image.open('output.png')
-message = get_message(img_hidden, "backup.dat")
-print(message)
+### Interfaccia Web (Streamlit)
+
+1. **Avvia l'applicazione:**
+
+```bash
+streamlit run app.py
 ```
 
-## Requisiti
+2. **Seleziona la modalità:**
 
-- Python 3.7+
-- PIL/Pillow
-- NumPy
-- Streamlit (per interfaccia web)
+   - **Nascondere dati**: Per occultare informazioni
+   - **Recuperare dati**: Per estrarre informazioni nascoste
 
-## Note tecniche
+3. **Scegli il tipo di dato:**
 
-- **Formato immagini**: PNG consigliato (lossless), JPG supportato ma può causare perdita dati
-- **Dimensioni**: L'immagine host deve avere capacità sufficiente per i dati da nascondere
-- **Backup parametri**: Essenziali per recuperare immagini e file binari nascosti
-- **Compressione**: Riduce la dimensione dei file binari da nascondere
+   - Stringhe
+   - Immagini
+   - File binari
 
-## Modalità compressione
+4. **Carica l'immagine host** e segui le istruzioni dinamiche
 
-- `NO_ZIP (0)`: Nessuna compressione
-- `FILE (1)`: Comprimi singolo file
-- `DIR (2)`: Comprimi intera directory
+## 📚 API
+
+### Moduli Principali
+
+#### `steganografia.core`
+
+- `hide_message()`: Nasconde stringhe
+- `get_message()`: Recupera stringhe
+- `hide_image()`: Nasconde immagini
+- `get_image()`: Recupera immagini
+- `hide_bin_file()`: Nasconde file binari
+- `get_bin_file()`: Recupera file binari
+
+#### `src.steganografia.*`
+
+- `StringSteganography`: Operazioni su stringhe
+- `ImageSteganography`: Operazioni su immagini
+- `BinarySteganography`: Operazioni su file binari
+- `backup_system`: Sistema di backup automatico
+- `FileValidator`: Validazione input
+
+#### `src.ui.*`
+
+- `AppLayout`: Layout e configurazione UI
+- `HideDataPages`: Pagine per nascondere dati
+- `RecoverDataPages`: Pagine per recuperare dati
+- `DynamicInstructions`: Istruzioni contestuali
+
+## 🧪 Testing
+
+Il progetto include una **suite di test completa e robusta** con coverage **superiore al 78%**.
+
+### Eseguire i Test
+
+```bash
+# Esegui tutti i test
+pytest
+
+# Test con coverage report
+pytest --cov=src/steganografia --cov=config --cov-report=html
+
+# Test con output dettagliato
+pytest -v
+
+# Test specifici per modulo
+pytest tests/test_string_operations.py
+pytest tests/test_image_operations.py
+pytest tests/test_binary_operations.py
+```
+
+### Test Coverage Dettagliata
+
+Il progetto mantiene un'alta qualità del codice attraverso test completi:
+
+- ✅ **Operazioni su stringhe** - Test di encoding, decoding, compressione
+- ✅ **Operazioni su immagini** - Test LSB/MSB, conversioni formato, backup automatico
+- ✅ **Operazioni su file binari** - Test compressione, recupero parametri, file di grandi dimensioni
+- ✅ **Sistema di backup** - Test salvataggio/recupero parametri automatico
+- ✅ **Validazione degli input** - Test controlli formato, dimensioni, integrità
+- ✅ **Gestione degli errori** - Test edge cases e condizioni eccezionali
+- ✅ **Utility per file** - Test operazioni I/O, conversioni binarie
+- ✅ **Operazioni sui bit** - Test manipolazione bit-level
+
+## 📁 Struttura del Progetto
+
+```
+Steganografia/
+├── 🌐 app.py                    # App Streamlit
+├── 📄 requirements.txt          # Dipendenze Python
+├── ⚙️ setup.cfg                # Configurazione test
+├── 📄 README.md                 # Documentazione
+│
+├── 📁 src/                      # Codice sorgente principale
+│   ├── 📁 steganografia/        # Core business logic
+│   │   ├── core.py              # API principale
+│   │   ├── string_operations.py
+│   │   ├── image_operations.py
+│   │   ├── binary_operations.py
+│   │   ├── backup.py            # Sistema backup
+│   │   ├── validator.py         # Validazione input
+│   │   ├── file_utils.py        # Utility file
+│   │   └── bit_operations.py    # Operazioni sui bit
+│   │
+│   └── 📁 ui/                  # Componenti interfaccia utente
+│       ├── layout.py            # Layout principale
+│       ├── hide_pages.py        # Pagine occultamento
+│       ├── recover_pages.py     # Pagine recupero
+│       ├── components.py        # Componenti riutilizzabili
+│       └── image_utils.py       # Utility immagini
+│
+├── 📁 config/                   # Configurazione
+│   └── constants.py             # Costanti globali
+│
+├── 📁 tests/                    # Suite di test
+│   ├── test_string_operations.py
+│   ├── test_image_operations.py
+│   ├── test_binary_operations.py
+│   ├── test_backup.py
+│   ├── test_validator.py
+│   ├── test_file_utils.py
+│   ├── test_bit_operations.py
+│   └── test_error_handling.py
+│
+└── 📁 assets/                  # Risorse statiche
+    ├── 📁 img/                 # Immagini di esempio
+    ├── 📁 pdf/                 # File PDF di test
+    ├── 📁 video/               # Video di esempio
+    └── 📁 text/                # File di testo
+```
+
+## 🎯 Algoritmi di Steganografia
+
+### LSB (Least Significant Bit)
+
+Il progetto utilizza principalmente la tecnica LSB che modifica i bit meno significativi dei pixel delle immagini per nascondere i dati.
+
+### Parametri Configurabili
+
+- **LSB**: Numero di bit meno significativi da utilizzare
+- **MSB**: Numero di bit più significativi
+- **DIV**: Fattore di divisione per ottimizzazione
+- **Compressione**: Modalità di compressione dei dati
+
+## 📈 Performance e Limiti
+
+- **Capacità**: Dipende dalle dimensioni dell'immagine host
+- **Qualità**: Perdita minima di qualità dell'immagine
+- **Formati Supportati**: PNG, JPEG, BMP, TIFF
+- **Dimensioni**: Ottimizzazione automatica in base alla capacità
+
+## 🤝 Contribuire
+
+1. Fork del progetto
+2. Crea un branch per la feature (`git checkout -b feature/AmazingFeature`)
+3. Commit delle modifiche (`git commit -m 'Add some AmazingFeature'`)
+4. Push del branch (`git push origin feature/AmazingFeature`)
+5. Apertura di una Pull Request
+
+### Guidelines per Contribuire
+
+- **Test Coverage**: Mantieni il test coverage sopra il **75%**
+- **Naming Conventions**: Segui le convenzioni di naming esistenti
+- **Documentazione**: Aggiungi docstring e commenti per nuove funzionalità
+- **Code Quality**: Testa il codice prima di fare commit
+- **Type Hints**: Utilizza type hints per migliorare la leggibilità
+- **Error Handling**: Gestisci correttamente le eccezioni
+
+## 📄 Licenza
+
+Questo progetto è distribuito sotto licenza MIT. Vedi il file `LICENSE` per i dettagli.
+
+## 👨‍💻 Autori
+
+**[Giuseppe](https://github.com/GiuseppeBellamacina)**
+
+**[Beatrice](https://github.com/Beatrix04-lo)**
+
+**[Daniele](https://github.com/danii909)**
+
+**[Simone](https://github.com/simone0028)**
+
+---
+
+**🔒 Steganografia** - _Nascondere è un'arte, rivelare è una scienza_
