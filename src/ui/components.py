@@ -58,4 +58,27 @@ def display_backup_options(
     return backup_file_path, use_recent, manual_params
 
 
+def display_image_info(uploaded_file, img, caption: str) -> None:
+    """Mostra informazioni su un'immagine caricata"""
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        st.image(uploaded_file, caption=caption, width=400)
+    with col2:
+        st.write(f"**Dimensioni:** {img.width} x {img.height}")
+        st.write(f"**Modalità:** {img.mode}")
+        if hasattr(uploaded_file, "type"):
+            st.write(f"**Formato:** {uploaded_file.type}")
 
+
+def cleanup_temp_file(file_path: str) -> None:
+    """Rimuove un file temporaneo se esiste"""
+    if file_path and os.path.exists(file_path):
+        try:
+            os.remove(file_path)
+        except Exception:
+            pass  # Ignora errori di cleanup
+
+
+def create_download_button(data, filename: str, mime: str, label: str) -> None:
+    """Crea un pulsante di download"""
+    st.download_button(label=label, data=data, file_name=filename, mime=mime)
