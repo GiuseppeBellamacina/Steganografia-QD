@@ -129,7 +129,7 @@ class TestBinaryOperationsAdvanced:
             # Verifica contenuto
             with open(output_path, "r", encoding="utf-8") as f:
                 recovered = f.read()
-            
+
             with open(tmp_file_path, "r", encoding="utf-8") as f:
                 original = f.read()
 
@@ -216,7 +216,7 @@ class TestBinaryOperationsAdvanced:
             )
             assert result is not None
 
-            result_img, n, div, size = result
+            result_img, _, div, _ = result
             assert result_img is not None
             assert div == custom_div  # Verifica che div sia quello specificato
 
@@ -227,7 +227,7 @@ class TestBinaryOperationsAdvanced:
             "Second different content!",
             "Third content with numbers: 12345",
         ]
-        
+
         with tempfile.TemporaryDirectory() as temp_dir:
             for idx, test_content in enumerate(test_cases):
                 img = Image.new("RGB", (300, 300), color="cyan")
@@ -243,7 +243,9 @@ class TestBinaryOperationsAdvanced:
 
                 result_img, n, div, size = result
 
-                get_bin_file(result_img, output_path, CompressionMode.NO_ZIP, n, div, size)
+                get_bin_file(
+                    result_img, output_path, CompressionMode.NO_ZIP, n, div, size
+                )
 
                 # Verifica
                 assert os.path.exists(output_path)
@@ -263,7 +265,7 @@ class TestBinaryOperationsAdvanced:
                 f.write("Test auto recovery")
 
             # Nascondi file (questo salva i parametri nel backup)
-            result_img, n, div, size = hide_bin_file(
+            result_img, _, _, _ = hide_bin_file(
                 img, tmp_input_path, CompressionMode.NO_ZIP
             )
 
@@ -289,7 +291,7 @@ class TestBinaryOperationsAdvanced:
                 f.write("Test with backup file")
 
             # Nascondi file con backup esplicito
-            result_img, n, div, size = hide_bin_file(
+            result_img, _, _, _ = hide_bin_file(
                 img, tmp_input_path, CompressionMode.NO_ZIP, backup_file=backup_path
             )
 
@@ -306,10 +308,10 @@ class TestBinaryOperationsAdvanced:
     def test_recover_missing_params_error(self):
         """Test errore quando parametri mancanti e nessun backup"""
         from steganografia.backup import backup_system
-        
+
         # Pulisce eventuali backup precedenti
         backup_system._last_binary_params = None
-        
+
         img = Image.new("RGB", (100, 100), color="orange")
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -339,7 +341,7 @@ class TestBinaryOperationsAdvanced:
 
             # Recupera e verifica
             get_bin_file(result_img, output_path, CompressionMode.NO_ZIP, n, div, size)
-            
+
             with open(output_path, "r", encoding="utf-8") as f:
                 recovered = f.read()
             assert recovered == large_content
@@ -356,7 +358,7 @@ class TestBinaryOperationsAdvanced:
                 f.write("Test grayscale conversion")
 
             # Nascondi file (dovrebbe convertire a RGB automaticamente)
-            result_img, n, div, size = hide_bin_file(
+            result_img, _, _, _ = hide_bin_file(
                 img_gray, tmp_input_path, CompressionMode.NO_ZIP
             )
 
