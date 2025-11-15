@@ -1,17 +1,18 @@
 """Test per il modulo image_operations"""
 
-import pytest
-import sys
-from pathlib import Path
-from PIL import Image
-import tempfile
 import os
+import sys
+import tempfile
+from pathlib import Path
+
+import pytest
+from PIL import Image
 
 # Aggiungi il percorso src al Python path
 src_path = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
-from steganografia import hide_image, get_image
+from steganografia.core import get_image, hide_image
 
 
 class TestImageOperations:

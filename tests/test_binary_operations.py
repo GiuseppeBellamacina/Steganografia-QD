@@ -1,17 +1,18 @@
 """Test per il modulo binary_operations"""
 
-import sys
-from pathlib import Path
-from PIL import Image
-import tempfile
 import os
+import sys
+import tempfile
+from pathlib import Path
+
+from PIL import Image
 
 # Aggiungi il percorso src al Python path
 src_path = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
-from steganografia import hide_bin_file, get_bin_file
 from config.constants import CompressionMode
+from steganografia.core import get_bin_file, hide_bin_file
 
 
 class TestBinaryOperations:

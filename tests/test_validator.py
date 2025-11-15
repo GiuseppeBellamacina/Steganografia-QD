@@ -1,8 +1,9 @@
 """Test per il modulo validator"""
 
-import pytest
 import sys
 from pathlib import Path
+
+import pytest
 from PIL import Image
 
 # Aggiungi il percorso src al Python path

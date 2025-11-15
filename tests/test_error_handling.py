@@ -1,27 +1,28 @@
 """Test per error handling e edge cases"""
 
-import pytest
-import sys
-from pathlib import Path
-from PIL import Image
-import tempfile
 import os
+import sys
+import tempfile
+from pathlib import Path
+
+import pytest
+from PIL import Image
 
 # Aggiungi il percorso src al Python path
 src_path = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
-from steganografia import (
-    hide_message,
+from config.constants import CompressionMode, DataType
+from steganografia.backup import backup_system
+from steganografia.bit_operations import set_last_n_bits
+from steganografia.core import (
+    get_last_params,
     get_message,
     hide_image,
+    hide_message,
     save_image,
-    get_last_params,
 )
 from steganografia.validator import ParameterValidator
-from steganografia.bit_operations import set_last_n_bits
-from steganografia.backup import backup_system
-from config.constants import CompressionMode, DataType
 
 
 class TestErrorHandling:

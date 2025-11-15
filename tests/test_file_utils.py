@@ -1,22 +1,23 @@
 """Test per il modulo file_utils"""
 
-import sys
-from pathlib import Path
-from PIL import Image
-import tempfile
 import os
+import sys
+import tempfile
+from pathlib import Path
+
+from PIL import Image
 
 # Aggiungi il percorso src al Python path
 src_path = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
+from config.constants import CompressionMode
 from steganografia.file_utils import (
-    save_image,
-    compress_file,
+    _save_image,
     cleanup_temp_files,
+    compress_file,
     find_div,
 )
-from config.constants import CompressionMode
 
 
 class TestFileUtils:
@@ -31,7 +32,7 @@ class TestFileUtils:
 
         try:
             # Test salvataggio
-            result = save_image(img, tmp_path)
+            result = _save_image(img, tmp_path)
             assert result is True
             assert os.path.exists(tmp_path)
 
