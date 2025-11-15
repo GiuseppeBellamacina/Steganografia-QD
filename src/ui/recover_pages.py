@@ -14,7 +14,13 @@ from .components import (
     cleanup_temp_file,
     create_download_button,
 )
-def recover_string_page():
+
+
+class RecoverDataPages:
+    """Gestisce le pagine per recuperare dati"""
+
+    @staticmethod
+    def recover_string_page():
         """Pagina per recuperare stringhe"""
         from src.steganografia import get_message
 
@@ -91,9 +97,9 @@ def recover_string_page():
                     st.error(f"❌ Errore: {str(e)}")
             else:
                 st.warning("⚠️ Carica un'immagine!")
-                
-                
-def recover_image_page():
+
+    @staticmethod
+    def recover_image_page():
         """Pagina per recuperare immagini"""
         from src.steganografia import get_image
 
@@ -147,11 +153,9 @@ def recover_image_page():
         output_name = st.text_input(
             "Nome file output", value="recovered_image.png", key="img_recover_output"
         )
-if st.button("🔓 Recupera Immagine", type="primary"):
+
+        if st.button("🔓 Recupera Immagine", type="primary"):
             if hidden_image:
-                # Pulisci risultati precedenti
-                if "recover_image_result" in st.session_state:
-                    del st.session_state["recover_image_result"]
                 try:
                     # Salva immagine temporaneamente
                     hidden_path = save_uploaded_file(hidden_image)
@@ -174,20 +178,31 @@ if st.button("🔓 Recupera Immagine", type="primary"):
                         if recovered_img:
                             st.success("✅ Immagine recuperata!")
 
-                            # Salva per il download
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                st.image(
+                                    recovered_img,
+                                    caption="Immagine recuperata",
+                                    width=400,
+                                )
+                            with col2:
+                                st.write(
+                                    f"**Dimensioni:** {recovered_img.width} x {recovered_img.height}"
+                                )
+                                st.write(f"**Modalità:** {recovered_img.mode}")
+
+                            # Converti l'immagine in buffer per il download
                             img_buffer = io.BytesIO()
                             recovered_img.save(img_buffer, format="PNG")
+                            img_buffer.seek(0)
 
-                            st.session_state["recover_image_result"] = {
-                                "data": img_buffer.getvalue(),
-                                "filename": output_name,
-                                "preview_image": recovered_img,  # Mantieni anteprima
-                                "image_info": {
-                                    "width": recovered_img.width,
-                                    "height": recovered_img.height,
-                                    "mode": recovered_img.mode,
-                                },
-                            }
+                            # Download
+                            create_download_button(
+                                img_buffer.getvalue(),
+                                output_name,
+                                "image/png",
+                                "📥 Scarica immagine recuperata",
+                            )
 
                             # Cleanup
                             cleanup_temp_file(output_name)
@@ -201,35 +216,8 @@ if st.button("🔓 Recupera Immagine", type="primary"):
             else:
                 st.warning("⚠️ Carica un'immagine!")
 
-        # Sezione download se ci sono risultati
-        if "recover_image_result" in st.session_state:
-            st.markdown("---")
-            st.subheader("📥 Download Risultati")
-
-            result_data = st.session_state["recover_image_result"]
-
-            # Mostra sempre l'immagine recuperata
-            if "preview_image" in result_data and "image_info" in result_data:
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.image(
-                        result_data["preview_image"],
-                        caption="Immagine recuperata",
-                        width=400,
-                    )
-                with col2:
-                    info = result_data["image_info"]
-                    st.write(f"**Dimensioni:** {info['width']} x {info['height']}")
-                    st.write(f"**Modalità:** {info['mode']}")
-
-            create_download_button(
-                result_data["data"],
-                result_data["filename"],
-                "image/png",
-                "📥 Scarica immagine recuperata",
-            )
-
-def recover_binary_page():
+    @staticmethod
+    def recover_binary_page():
         """Pagina per recuperare file binari"""
         from src.steganografia import get_bin_file
 
@@ -292,9 +280,6 @@ def recover_binary_page():
 
         if st.button("🔓 Recupera File", type="primary"):
             if hidden_image:
-                # Pulisci risultati precedenti
-                if "recover_binary_result" in st.session_state:
-                    del st.session_state["recover_binary_result"]
                 try:
                     # Salva immagine temporaneamente
                     hidden_path = save_uploaded_file(hidden_image)
@@ -316,15 +301,18 @@ def recover_binary_page():
                         if os.path.exists(output_name):
                             st.success("✅ File recuperato!")
 
-                            # Salva per il download
                             file_size = os.path.getsize(output_name)
+                            st.write(f"**File recuperato:** {output_name}")
+                            st.write(f"**Dimensione:** {file_size} bytes")
+
+                            # Download
                             with open(output_name, "rb") as f:
-                                st.session_state["recover_binary_result"] = {
-                                    "data": f.read(),
-                                    "filename": output_name,
-                                    "file_size": file_size,  # Mantieni info file
-                                    "success_message": f"**File recuperato:** {output_name}",
-                                }
+                                create_download_button(
+                                    f.read(),
+                                    output_name,
+                                    "application/octet-stream",
+                                    "📥 Scarica file recuperato",
+                                )
                             # Cleanup
                             cleanup_temp_file(output_name)
                         else:
