@@ -2,20 +2,21 @@
 API principale per le operazioni di steganografia
 """
 
-import sys
 import os
+import sys
 from typing import Optional, Tuple
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from PIL import Image
-from config.constants import CompressionMode
-from .string_operations import StringSteganography
-from .image_operations import ImageSteganography
-from .binary_operations import BinarySteganography
-from .backup import backup_system
-from .file_utils import save_image
 
+from config.constants import CompressionMode
+
+from .backup import backup_system
+from .binary_operations import BinarySteganography
+from .file_utils import save_image
+from .image_operations import ImageSteganography
+from .string_operations import StringSteganography
 
 # Esporta le costanti per compatibilità
 NO_ZIP = CompressionMode.NO_ZIP

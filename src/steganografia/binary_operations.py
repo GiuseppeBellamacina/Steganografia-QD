@@ -2,20 +2,22 @@
 Operazioni di steganografia per i file binari
 """
 
-import sys
 import os
-from typing import Optional, Tuple
+import sys
 from os.path import getsize
+from typing import Optional, Tuple
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 import numpy as np
 from PIL import Image
-from config.constants import DataType, CompressionMode, ErrorMessages
-from .bit_operations import set_last_n_bits, string_to_bytes
-from .validator import ParameterValidator
+
+from config.constants import CompressionMode, DataType, ErrorMessages
+
 from .backup import backup_system
-from .file_utils import compress_file, cleanup_temp_files, find_div
+from .bit_operations import set_last_n_bits, string_to_bytes
+from .file_utils import cleanup_temp_files, compress_file, find_div
+from .validator import ParameterValidator
 
 
 class BinarySteganography:

@@ -69,7 +69,7 @@ class AppLayout:
             unsafe_allow_html=True,
         )
 
-        
+
 class DynamicInstructions:
     """Gestisce le istruzioni dinamiche nella sidebar"""
 

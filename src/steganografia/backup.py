@@ -2,14 +2,15 @@
 Sistema di backup e recupero dei parametri di steganografia
 """
 
-import sys
 import os
+import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 import pickle
 from os.path import exists
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 from config.constants import DataType
 
 

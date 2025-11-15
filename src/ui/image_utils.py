@@ -4,6 +4,7 @@ Utility per gestire e visualizzare le immagini nell'interfaccia Streamlit
 
 from io import BytesIO
 from typing import Optional
+
 import streamlit as st
 from PIL import Image
 

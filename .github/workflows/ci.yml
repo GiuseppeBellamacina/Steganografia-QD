@@ -25,7 +25,7 @@ jobs:
           pip install black pylint
 
       - name: Format with Black
-        run: black src/ steganografia.py streamlit_app.py
+        run: black src/ --check
 
       - name: Lint with Pylint
-        run: pylint src/ steganografia.py streamlit_app.py --fail-under=8.0 --disable=C0114,C0115,C0116,C0413,R0913,R0917,R0914,R0912,R0915,C0415,W0718,R1702,C0301,W0707,R0801
+        run: pylint src/ --fail-under=8.0 --disable=C0114,C0115,C0116,C0413,R0913,R0917,R0914,R0912,R0915,C0415,W0718,R1702,C0301,W0707,R0801

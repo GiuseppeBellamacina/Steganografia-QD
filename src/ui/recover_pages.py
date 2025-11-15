@@ -4,15 +4,17 @@ Pagine per recuperare dati dall'interfaccia Streamlit
 
 import io
 import os
-from PIL import Image
+
 import streamlit as st
+from PIL import Image
 
 from config.constants import CompressionMode
+
 from .components import (
-    save_uploaded_file,
-    display_backup_options,
     cleanup_temp_file,
     create_download_button,
+    display_backup_options,
+    save_uploaded_file,
 )
 
 
