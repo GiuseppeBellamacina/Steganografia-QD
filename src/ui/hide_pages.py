@@ -363,3 +363,103 @@ def hide_binary_page():
             backup_name = st.text_input(
                 "Nome file backup", value="binary_backup.dat", key="bin_backup_name"
             )
+    if st.button("🔒 Nascondi File", type="primary"):
+            if host_image and secret_file:
+                # Pulisci risultati precedenti
+                if "hide_binary_results" in st.session_state:
+                    del st.session_state["hide_binary_results"]
+                try:
+                    # Salva file temporaneamente
+                    host_path = save_uploaded_file(host_image)
+                    secret_path = save_uploaded_file(secret_file)
+
+                    if host_path and secret_path:
+                        img = Image.open(host_path)
+
+                        # Nascondi file
+                        backup_file = backup_name if save_backup else None
+                        with st.spinner("Nascondendo file..."):
+                            result = hide_bin_file(
+                                img, secret_path, zip_mode, n, int(div), backup_file
+                            )
+
+                        if result:  # Controllo successo
+                            result_img, final_n, final_div, size = result
+                            st.success("✅ File nascosto con successo!")
+
+                            # Salva risultati per il download
+                            img_buffer = io.BytesIO()
+                            result_img.save(img_buffer, format="PNG")
+
+                            downloads = {
+                                "image": {
+                                    "data": img_buffer.getvalue(),
+                                    "filename": output_name,
+                                    "mime": "image/png",
+                                    "label": "📥 Scarica immagine con file nascosto",
+                                },
+                                "preview_image": result_img,  # Mantieni anteprima
+                                "preview_info": f"📊 Parametri utilizzati: N={final_n}, DIV={final_div:.2f}, SIZE={size} bytes",
+                            }
+
+                            # Aggiungi backup se richiesto
+                            if backup_file and os.path.exists(backup_file):
+                                with open(backup_file, "rb") as f:
+                                    downloads["backup"] = {
+                                        "data": f.read(),
+                                        "filename": backup_file,
+                                        "mime": "application/octet-stream",
+                                        "label": "💾 Scarica file backup parametri",
+                                    }
+                                cleanup_temp_file(backup_file)
+
+                            st.session_state["hide_binary_results"] = downloads
+
+                            # Cleanup
+                            cleanup_temp_file(output_name)
+                        else:
+                            st.error("❌ Errore durante l'occultamento del file")
+                    else:
+                        st.error("❌ Errore nel salvare i file")
+
+                except Exception as e:
+                    st.error(f"❌ Errore: {str(e)}")
+            else:
+                st.warning("⚠️ Carica un'immagine e un file!")
+
+        # Sezione download se ci sono risultati
+        if "hide_binary_results" in st.session_state:
+            st.markdown("---")
+            st.subheader("📥 Download Risultati")
+
+            downloads = st.session_state["hide_binary_results"]
+
+            # Mostra sempre l'anteprima e info
+            if "preview_image" in downloads:
+                if "preview_info" in downloads:
+                    st.info(downloads["preview_info"])
+                st.image(
+                    downloads["preview_image"],
+                    caption="Anteprima immagine con file nascosto",
+                    width=400,
+                )
+
+            # Download immagine
+            if "image" in downloads:
+                img_data = downloads["image"]
+                create_download_button(
+                    img_data["data"],
+                    img_data["filename"],
+                    img_data["mime"],
+                    img_data["label"],
+                )
+
+            # Download backup se presente
+            if "backup" in downloads:
+                backup_data = downloads["backup"]
+                create_download_button(
+                    backup_data["data"],
+                    backup_data["filename"],
+                    backup_data["mime"],
+                    backup_data["label"],
+                )
