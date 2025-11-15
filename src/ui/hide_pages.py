@@ -14,48 +14,53 @@ from .components import (
     create_download_button,
 )
 
-def hide_string_page():
-    """Pagina per nascondere stringhe"""
-    from src.steganografia import hide_message
 
-    st.subheader("📝 Nascondere Stringa")
+class HideDataPages:
+    """Gestisce le pagine per nascondere dati"""
 
-    # Upload dell'immagine host
-    host_image = st.file_uploader(
-        "🖼️ Carica l'immagine host:",
-        type=["png", "jpg", "jpeg"],
-        key="hide_string_host_image",
-    )
+    @staticmethod
+    def hide_string_page():
+        """Pagina per nascondere stringhe"""
+        from src.steganografia import hide_message
 
-    # Mostra anteprima dell'immagine host
-    if host_image:
-        from .image_utils import ImageDisplay
+        st.subheader("📝 Nascondere Stringa")
 
-        ImageDisplay.show_resized_image(
-            host_image, "🖼️ Immagine Host", max_width=400
+        # Upload dell'immagine host
+        host_image = st.file_uploader(
+            "🖼️ Carica l'immagine host:",
+            type=["png", "jpg", "jpeg"],
+            key="hide_string_host_image",
         )
-        ImageDisplay.show_image_details(host_image, "Dettagli Immagine Host")
 
-    message = st.text_area(
-        "🔒 Inserisci il messaggio da nascondere:",
-        height=100,
-        placeholder="Scrivi qui il tuo messaggio segreto...",
-    )
+        # Mostra anteprima dell'immagine host
+        if host_image:
+            from .image_utils import ImageDisplay
 
-    col1, col2 = st.columns(2)
-    with col1:
-        output_name = st.text_input(
-            "Nome file output", value="image_with_message.png"
-        )
-    with col2:
-        save_backup = st.checkbox("Salva parametri su file")
-        backup_name = ""
-        if save_backup:
-            backup_name = st.text_input(
-                "Nome file backup", value="string_backup.dat"
+            ImageDisplay.show_resized_image(
+                host_image, "🖼️ Immagine Host", max_width=400
             )
+            ImageDisplay.show_image_details(host_image, "Dettagli Immagine Host")
 
-    if st.button("🔒 Nascondi Messaggio", type="primary"):
+        message = st.text_area(
+            "🔒 Inserisci il messaggio da nascondere:",
+            height=100,
+            placeholder="Scrivi qui il tuo messaggio segreto...",
+        )
+
+        col1, col2 = st.columns(2)
+        with col1:
+            output_name = st.text_input(
+                "Nome file output", value="image_with_message.png"
+            )
+        with col2:
+            save_backup = st.checkbox("Salva parametri su file")
+            backup_name = ""
+            if save_backup:
+                backup_name = st.text_input(
+                    "Nome file backup", value="string_backup.dat"
+                )
+
+        if st.button("🔒 Nascondi Messaggio", type="primary"):
             if host_image and message:
                 try:
                     # Salva immagine temporaneamente
@@ -111,6 +116,7 @@ def hide_string_page():
             else:
                 st.warning("⚠️ Carica un'immagine e inserisci un messaggio!")
 
+    @staticmethod
     def hide_image_page():
         """Pagina per nascondere immagini"""
         from src.steganografia import hide_image
@@ -286,88 +292,86 @@ def hide_string_page():
             else:
                 st.warning("⚠️ Carica entrambe le immagini!")
 
+    @staticmethod
+    def hide_binary_page():
+        """Pagina per nascondere file binari"""
+        from src.steganografia import hide_bin_file
 
-def hide_binary_page():
-    """Pagina per nascondere file binari"""
-    from src.steganografia import hide_bin_file
+        st.subheader("📁 Nascondere File Binario")
+        st.info("💡 La compressione riduce la dimensione del file da nascondere")
 
-    st.subheader("📁 Nascondere File Binario")
-    st.info("💡 La compressione riduce la dimensione del file da nascondere")
-
-    # Upload dell'immagine host
-    host_image = st.file_uploader(
-        "🖼️ Carica l'immagine host:",
-        type=["png", "jpg", "jpeg"],
-        key="hide_binary_host_image",
-    )
-
-    # Mostra anteprima dell'immagine host
-    if host_image:
-        from .image_utils import ImageDisplay
-
-        ImageDisplay.show_resized_image(
-            host_image, "🖼️ Immagine Host", max_width=400
-        )
-        ImageDisplay.show_image_details(host_image, "Dettagli Immagine Host")
-
-    secret_file = st.file_uploader(
-        "Carica il file da nascondere", key="secret_file"
-    )
-
-    if secret_file:
-        st.write(f"**Nome file:** {secret_file.name}")
-        st.write(f"**Dimensione:** {len(secret_file.getvalue())} bytes")
-        if hasattr(secret_file, "type"):
-            st.write(f"**Tipo:** {secret_file.type}")
-
-    # Parametri
-    st.subheader("⚙️ Parametri")
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        zip_mode = st.selectbox(
-            "Modalità compressione",
-            [CompressionMode.NO_ZIP, CompressionMode.FILE, CompressionMode.DIR],
-            format_func=lambda x: {
-                CompressionMode.NO_ZIP: "Nessuna",
-                CompressionMode.FILE: "Comprimi file",
-                CompressionMode.DIR: "Comprimi directory",
-            }[x],
-        )
-    with col2:
-        n = st.number_input(
-            "N (bit da modificare)",
-            min_value=0,
-            max_value=8,
-            value=0,
-            help="0 = automatico",
-        )
-    with col3:
-        div = st.number_input(
-            "Divisore",
-            min_value=0.0,
-            value=0.0,
-            key="bin_div",
-            help="0.0 = automatico",
+        # Upload dell'immagine host
+        host_image = st.file_uploader(
+            "🖼️ Carica l'immagine host:",
+            type=["png", "jpg", "jpeg"],
+            key="hide_binary_host_image",
         )
 
-    col1, col2 = st.columns(2)
-    with col1:
-        output_name = st.text_input(
-            "Nome file output", value="image_with_file.png", key="bin_output"
-        )
-    with col2:
-        save_backup = st.checkbox("Salva parametri su file", key="bin_backup_save")
-        backup_name = ""
-        if save_backup:
-            backup_name = st.text_input(
-                "Nome file backup", value="binary_backup.dat", key="bin_backup_name"
+        # Mostra anteprima dell'immagine host
+        if host_image:
+            from .image_utils import ImageDisplay
+
+            ImageDisplay.show_resized_image(
+                host_image, "🖼️ Immagine Host", max_width=400
             )
-    if st.button("🔒 Nascondi File", type="primary"):
+            ImageDisplay.show_image_details(host_image, "Dettagli Immagine Host")
+
+        secret_file = st.file_uploader(
+            "Carica il file da nascondere", key="secret_file"
+        )
+
+        if secret_file:
+            st.write(f"**Nome file:** {secret_file.name}")
+            st.write(f"**Dimensione:** {len(secret_file.getvalue())} bytes")
+            if hasattr(secret_file, "type"):
+                st.write(f"**Tipo:** {secret_file.type}")
+
+        # Parametri
+        st.subheader("⚙️ Parametri")
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            zip_mode = st.selectbox(
+                "Modalità compressione",
+                [CompressionMode.NO_ZIP, CompressionMode.FILE, CompressionMode.DIR],
+                format_func=lambda x: {
+                    CompressionMode.NO_ZIP: "Nessuna",
+                    CompressionMode.FILE: "Comprimi file",
+                    CompressionMode.DIR: "Comprimi directory",
+                }[x],
+            )
+        with col2:
+            n = st.number_input(
+                "N (bit da modificare)",
+                min_value=0,
+                max_value=8,
+                value=0,
+                help="0 = automatico",
+            )
+        with col3:
+            div = st.number_input(
+                "Divisore",
+                min_value=0.0,
+                value=0.0,
+                key="bin_div",
+                help="0.0 = automatico",
+            )
+
+        col1, col2 = st.columns(2)
+        with col1:
+            output_name = st.text_input(
+                "Nome file output", value="image_with_file.png", key="bin_output"
+            )
+        with col2:
+            save_backup = st.checkbox("Salva parametri su file", key="bin_backup_save")
+            backup_name = ""
+            if save_backup:
+                backup_name = st.text_input(
+                    "Nome file backup", value="binary_backup.dat", key="bin_backup_name"
+                )
+
+        if st.button("🔒 Nascondi File", type="primary"):
             if host_image and secret_file:
-                # Pulisci risultati precedenti
-                if "hide_binary_results" in st.session_state:
-                    del st.session_state["hide_binary_results"]
                 try:
                     # Salva file temporaneamente
                     host_path = save_uploaded_file(host_image)
@@ -387,36 +391,43 @@ def hide_binary_page():
                             result_img, final_n, final_div, size = result
                             st.success("✅ File nascosto con successo!")
 
-                            # Salva risultati per il download
+                            st.info(
+                                f"📊 Parametri utilizzati: N={final_n}, DIV={final_div:.2f}, SIZE={size} bytes"
+                            )
+
+                            # Mostra anteprima dell'immagine risultato
+                            st.image(
+                                result_img,
+                                caption="Anteprima immagine con file nascosto",
+                                width=400,
+                            )
+
+                            # Converti l'immagine in buffer per il download
                             img_buffer = io.BytesIO()
                             result_img.save(img_buffer, format="PNG")
+                            img_buffer.seek(0)
 
-                            downloads = {
-                                "image": {
-                                    "data": img_buffer.getvalue(),
-                                    "filename": output_name,
-                                    "mime": "image/png",
-                                    "label": "📥 Scarica immagine con file nascosto",
-                                },
-                                "preview_image": result_img,  # Mantieni anteprima
-                                "preview_info": f"📊 Parametri utilizzati: N={final_n}, DIV={final_div:.2f}, SIZE={size} bytes",
-                            }
-
-                            # Aggiungi backup se richiesto
-                            if backup_file and os.path.exists(backup_file):
-                                with open(backup_file, "rb") as f:
-                                    downloads["backup"] = {
-                                        "data": f.read(),
-                                        "filename": backup_file,
-                                        "mime": "application/octet-stream",
-                                        "label": "💾 Scarica file backup parametri",
-                                    }
-                                cleanup_temp_file(backup_file)
-
-                            st.session_state["hide_binary_results"] = downloads
+                            # Download risultato
+                            create_download_button(
+                                img_buffer.getvalue(),
+                                output_name,
+                                "image/png",
+                                "📥 Scarica immagine con file nascosto",
+                            )
 
                             # Cleanup
                             cleanup_temp_file(output_name)
+
+                            # Download backup
+                            if backup_file and os.path.exists(backup_file):
+                                with open(backup_file, "rb") as f:
+                                    create_download_button(
+                                        f.read(),
+                                        backup_file,
+                                        "application/octet-stream",
+                                        "💾 Scarica file backup parametri",
+                                    )
+                                cleanup_temp_file(backup_file)
                         else:
                             st.error("❌ Errore durante l'occultamento del file")
                     else:
@@ -426,40 +437,3 @@ def hide_binary_page():
                     st.error(f"❌ Errore: {str(e)}")
             else:
                 st.warning("⚠️ Carica un'immagine e un file!")
-
-        # Sezione download se ci sono risultati
-        if "hide_binary_results" in st.session_state:
-            st.markdown("---")
-            st.subheader("📥 Download Risultati")
-
-            downloads = st.session_state["hide_binary_results"]
-
-            # Mostra sempre l'anteprima e info
-            if "preview_image" in downloads:
-                if "preview_info" in downloads:
-                    st.info(downloads["preview_info"])
-                st.image(
-                    downloads["preview_image"],
-                    caption="Anteprima immagine con file nascosto",
-                    width=400,
-                )
-
-            # Download immagine
-            if "image" in downloads:
-                img_data = downloads["image"]
-                create_download_button(
-                    img_data["data"],
-                    img_data["filename"],
-                    img_data["mime"],
-                    img_data["label"],
-                )
-
-            # Download backup se presente
-            if "backup" in downloads:
-                backup_data = downloads["backup"]
-                create_download_button(
-                    backup_data["data"],
-                    backup_data["filename"],
-                    backup_data["mime"],
-                    backup_data["label"],
-                )
