@@ -63,6 +63,7 @@ class AppLayout:
             """
             <div style='text-align: center'>
                 <p>🔒 <strong>Steganografia App</strong> - Nascondere e recuperare dati in modo sicuro</p>
+                <p><em>Nascondere è un'arte, rivelare è una scienza</em></p>
                 <p><em>Sviluppato con ❤️ usando Streamlit</em></p>
             </div>
             """,
@@ -152,7 +153,7 @@ class DynamicInstructions:
             1. 📤 Carica l'immagine con dati nascosti
             2. 🔧 Scegli fonte parametri:
                - 🔄 Automatico (variabili recenti)
-               - 📄 File backup (.dat)  
+               - 📄 File backup (.dat)
                - ✋ Inserimento manuale
             3. 🔓 Clicca "Recupera Immagine"
             4. 📥 Scarica l'immagine recuperata
