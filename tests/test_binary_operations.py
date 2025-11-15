@@ -250,3 +250,115 @@ class TestBinaryOperationsAdvanced:
                 with open(output_path, "r", encoding="utf-8") as f:
                     recovered = f.read()
                 assert recovered == test_content
+
+    def test_recover_without_parameters(self):
+        """Test recupero file senza parametri usando backup automatico"""
+        img = Image.new("RGB", (200, 200), color="magenta")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            tmp_input_path = os.path.join(temp_dir, "input.txt")
+            output_path = os.path.join(temp_dir, "output.txt")
+
+            with open(tmp_input_path, "w", encoding="utf-8") as f:
+                f.write("Test auto recovery")
+
+            # Nascondi file (questo salva i parametri nel backup)
+            result_img, n, div, size = hide_bin_file(
+                img, tmp_input_path, CompressionMode.NO_ZIP
+            )
+
+            # Recupera file senza passare parametri (usa backup automatico)
+            get_bin_file(result_img, output_path)
+
+            # Verifica
+            assert os.path.exists(output_path)
+            with open(output_path, "r", encoding="utf-8") as f:
+                recovered = f.read()
+            assert recovered == "Test auto recovery"
+
+    def test_recover_with_backup_file(self):
+        """Test recupero file usando file di backup esplicito"""
+        img = Image.new("RGB", (200, 200), color="purple")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            tmp_input_path = os.path.join(temp_dir, "input.txt")
+            output_path = os.path.join(temp_dir, "output.txt")
+            backup_path = os.path.join(temp_dir, "backup.json")
+
+            with open(tmp_input_path, "w", encoding="utf-8") as f:
+                f.write("Test with backup file")
+
+            # Nascondi file con backup esplicito
+            result_img, n, div, size = hide_bin_file(
+                img, tmp_input_path, CompressionMode.NO_ZIP, backup_file=backup_path
+            )
+
+            # Recupera file usando backup file
+            get_bin_file(result_img, output_path, backup_file=backup_path)
+
+            # Verifica
+            assert os.path.exists(output_path)
+            assert os.path.exists(backup_path)
+            with open(output_path, "r", encoding="utf-8") as f:
+                recovered = f.read()
+            assert recovered == "Test with backup file"
+
+    def test_recover_missing_params_error(self):
+        """Test errore quando parametri mancanti e nessun backup"""
+        from steganografia.backup import backup_system
+        
+        # Pulisce eventuali backup precedenti
+        backup_system._last_binary_params = None
+        
+        img = Image.new("RGB", (100, 100), color="orange")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = os.path.join(temp_dir, "output.txt")
+
+            # Tenta di recuperare senza parametri e senza backup disponibile
+            with pytest.raises(ValueError):
+                get_bin_file(img, output_path)
+
+    def test_hide_large_file(self):
+        """Test nascondere file relativamente grande"""
+        img = Image.new("RGB", (500, 500), color="navy")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            tmp_input_path = os.path.join(temp_dir, "large.txt")
+            output_path = os.path.join(temp_dir, "output.txt")
+
+            # Crea un file di circa 1KB
+            large_content = "A" * 1000
+            with open(tmp_input_path, "w", encoding="utf-8") as f:
+                f.write(large_content)
+
+            # Nascondi file
+            result_img, n, div, size = hide_bin_file(
+                img, tmp_input_path, CompressionMode.NO_ZIP
+            )
+
+            # Recupera e verifica
+            get_bin_file(result_img, output_path, CompressionMode.NO_ZIP, n, div, size)
+            
+            with open(output_path, "r", encoding="utf-8") as f:
+                recovered = f.read()
+            assert recovered == large_content
+            assert len(recovered) == 1000
+
+    def test_grayscale_image_conversion(self):
+        """Test che immagini in scala di grigi vengano convertite a RGB"""
+        img_gray = Image.new("L", (200, 200), color=128)  # Grayscale
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            tmp_input_path = os.path.join(temp_dir, "input.txt")
+
+            with open(tmp_input_path, "w", encoding="utf-8") as f:
+                f.write("Test grayscale conversion")
+
+            # Nascondi file (dovrebbe convertire a RGB automaticamente)
+            result_img, n, div, size = hide_bin_file(
+                img_gray, tmp_input_path, CompressionMode.NO_ZIP
+            )
+
+            # Verifica che l'immagine risultante sia RGB
+            assert result_img.mode == "RGB"
