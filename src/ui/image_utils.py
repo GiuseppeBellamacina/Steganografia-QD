@@ -3,7 +3,7 @@ Utility per gestire e visualizzare le immagini nell'interfaccia Streamlit
 """
 
 from io import BytesIO
-
+from typing import Optional
 import streamlit as st
 from PIL import Image
 
@@ -11,8 +11,9 @@ from PIL import Image
 class ImageDisplay:
     """Gestisce la visualizzazione delle immagini in Streamlit"""
 
+    @staticmethod
     def show_resized_image(
-        self, image_data, title: str, max_width: int = 400, max_height: int = 300
+        image_data, title: str, max_width: int = 400, max_height: int = 300
     ):
         """
         Mostra un'immagine ridimensionata per evitare di occupare troppo spazio
@@ -65,7 +66,8 @@ class ImageDisplay:
         except Exception as e:
             st.error(f"Errore nella visualizzazione dell'immagine: {str(e)}")
 
-    def show_image_comparison(self, original_image, processed_image, max_width: int = 300):
+    @staticmethod
+    def show_image_comparison(original_image, processed_image, max_width: int = 300):
         """
         Mostra due immagini affiancate per confronto
 
@@ -86,7 +88,8 @@ class ImageDisplay:
                 processed_image, "🔒 Immagine con Dati Nascosti", max_width=max_width
             )
 
-    def get_image_info(self, image_data) -> dict:
+    @staticmethod
+    def get_image_info(image_data) -> dict:
         """
         Restituisce informazioni sull'immagine
 
@@ -114,8 +117,8 @@ class ImageDisplay:
         except Exception:
             return {}
 
-    
-    def show_image_details(self, image_data, title: str = "Dettagli Immagine"):
+    @staticmethod
+    def show_image_details(image_data, title: str = "Dettagli Immagine"):
         """
         Mostra dettagli tecnici dell'immagine
 
@@ -136,3 +139,51 @@ class ImageDisplay:
                 with col2:
                     st.metric("Pixel Totali", f"{info['size_pixels']:,}")
                     st.metric("Formato", info.get("format", "N/A"))
+
+
+class ResultDisplay:
+    """Gestisce la visualizzazione dei risultati delle operazioni"""
+
+    @staticmethod
+    def show_success_message(message: str, details: Optional[str] = None):
+        """Mostra un messaggio di successo"""
+        st.success(f"✅ {message}")
+        if details:
+            with st.expander("📝 Dettagli"):
+                st.info(details)
+
+    @staticmethod
+    def show_error_message(error: str, suggestions: Optional[list] = None):
+        """Mostra un messaggio di errore con eventuali suggerimenti"""
+        st.error(f"❌ {error}")
+
+        if suggestions:
+            with st.expander("💡 Suggerimenti"):
+                for suggestion in suggestions:
+                    st.write(f"• {suggestion}")
+
+    @staticmethod
+    def show_warning_message(warning: str, details: Optional[str] = None):
+        """Mostra un messaggio di avvertimento"""
+        st.warning(f"⚠️ {warning}")
+        if details:
+            st.caption(details)
+
+    @staticmethod
+    def show_download_button(data, filename: str, mime_type: str, button_text: str):
+        """
+        Mostra un pulsante per scaricare i dati
+
+        Args:
+            data: Dati da scaricare
+            filename: Nome del file
+            mime_type: Tipo MIME del file
+            button_text: Testo del pulsante
+        """
+        return st.download_button(
+            label=button_text,
+            data=data,
+            file_name=filename,
+            mime=mime_type,
+            key=f"download_{filename}",
+        )
