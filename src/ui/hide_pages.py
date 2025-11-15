@@ -11,6 +11,7 @@ from PIL import Image
 from config.constants import CompressionMode
 
 from .components import cleanup_temp_file, create_download_button, save_uploaded_file
+from .image_utils import ImageDisplay
 
 
 class HideDataPages:
@@ -32,8 +33,6 @@ class HideDataPages:
 
         # Mostra anteprima dell'immagine host
         if host_image:
-            from .image_utils import ImageDisplay
-
             ImageDisplay.show_resized_image(
                 host_image, "🖼️ Immagine Host", max_width=400
             )
@@ -126,8 +125,6 @@ class HideDataPages:
 
         # Mostra anteprima dell'immagine host
         if host_image:
-            from .image_utils import ImageDisplay
-
             ImageDisplay.show_resized_image(
                 host_image, "🖼️ Immagine Host", max_width=300
             )
@@ -141,8 +138,6 @@ class HideDataPages:
 
         # Mostra anteprima dell'immagine da nascondere
         if secret_image:
-            from .image_utils import ImageDisplay
-
             ImageDisplay.show_resized_image(
                 secret_image, "🔒 Immagine da Nascondere", max_width=300
             )
@@ -152,8 +147,6 @@ class HideDataPages:
 
         # Controllo compatibilità dimensioni
         if host_image and secret_image:
-            from .image_utils import ImageDisplay
-
             host_info = ImageDisplay.get_image_info(host_image)
             secret_info = ImageDisplay.get_image_info(secret_image)
 
@@ -335,8 +328,6 @@ class HideDataPages:
 
         # Mostra anteprima dell'immagine host
         if host_image:
-            from .image_utils import ImageDisplay
-
             ImageDisplay.show_resized_image(
                 host_image, "🖼️ Immagine Host", max_width=400
             )

@@ -13,6 +13,7 @@ src_path = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
 from config.constants import CompressionMode
+from steganografia.backup import backup_system
 from steganografia.core import get_bin_file, hide_bin_file
 
 
@@ -307,8 +308,6 @@ class TestBinaryOperationsAdvanced:
 
     def test_recover_missing_params_error(self):
         """Test errore quando parametri mancanti e nessun backup"""
-        from steganografia.backup import backup_system
-
         # Pulisce eventuali backup precedenti
         backup_system._last_binary_params = None
 

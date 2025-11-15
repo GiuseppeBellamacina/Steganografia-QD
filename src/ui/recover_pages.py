@@ -16,6 +16,7 @@ from .components import (
     display_backup_options,
     save_uploaded_file,
 )
+from .image_utils import ImageDisplay
 
 
 class RecoverDataPages:
@@ -37,8 +38,6 @@ class RecoverDataPages:
 
         # Mostra anteprima dell'immagine
         if hidden_image:
-            from .image_utils import ImageDisplay
-
             ImageDisplay.show_resized_image(
                 hidden_image, "🔒 Immagine con Messaggio", max_width=400
             )
@@ -133,8 +132,6 @@ class RecoverDataPages:
 
         # Mostra anteprima dell'immagine
         if hidden_image:
-            from .image_utils import ImageDisplay
-
             ImageDisplay.show_resized_image(
                 hidden_image, "🔒 Immagine con Dati Nascosti", max_width=400
             )
@@ -271,8 +268,6 @@ class RecoverDataPages:
 
         # Mostra anteprima dell'immagine
         if hidden_image:
-            from .image_utils import ImageDisplay
-
             ImageDisplay.show_resized_image(
                 hidden_image, "🔒 Immagine con File Nascosto", max_width=400
             )

@@ -12,6 +12,7 @@ from PIL import Image
 src_path = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
+from steganografia.backup import backup_system
 from steganografia.core import get_image, hide_image
 
 
@@ -152,8 +153,6 @@ class TestImageOperations:
 
     def test_recover_missing_params_error(self):
         """Test errore quando parametri mancanti e nessun backup"""
-        from steganografia.backup import backup_system
-
         # Pulisce backup
         backup_system._last_image_params = None
 
