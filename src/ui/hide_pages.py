@@ -111,7 +111,6 @@ def hide_string_page():
             else:
                 st.warning("⚠️ Carica un'immagine e inserisci un messaggio!")
 
-    @staticmethod
     def hide_image_page():
         """Pagina per nascondere immagini"""
         from src.steganografia import hide_image
@@ -181,7 +180,7 @@ def hide_string_page():
                     st.success(
                         f"✅ **Dimensioni compatibili**: L'immagine host ({host_pixels:,} pixel) è {host_pixels/secret_pixels:.1f}x più grande dell'immagine da nascondere ({secret_pixels:,} pixel)"
                     )
-                    
+
         # Parametri
         st.subheader("⚙️ Parametri")
         col1, col2, col3 = st.columns(3)
@@ -286,3 +285,81 @@ def hide_string_page():
                     st.error(f"❌ Errore: {str(e)}")
             else:
                 st.warning("⚠️ Carica entrambe le immagini!")
+
+
+def hide_binary_page():
+    """Pagina per nascondere file binari"""
+    from src.steganografia import hide_bin_file
+
+    st.subheader("📁 Nascondere File Binario")
+    st.info("💡 La compressione riduce la dimensione del file da nascondere")
+
+    # Upload dell'immagine host
+    host_image = st.file_uploader(
+        "🖼️ Carica l'immagine host:",
+        type=["png", "jpg", "jpeg"],
+        key="hide_binary_host_image",
+    )
+
+    # Mostra anteprima dell'immagine host
+    if host_image:
+        from .image_utils import ImageDisplay
+
+        ImageDisplay.show_resized_image(
+            host_image, "🖼️ Immagine Host", max_width=400
+        )
+        ImageDisplay.show_image_details(host_image, "Dettagli Immagine Host")
+
+    secret_file = st.file_uploader(
+        "Carica il file da nascondere", key="secret_file"
+    )
+
+    if secret_file:
+        st.write(f"**Nome file:** {secret_file.name}")
+        st.write(f"**Dimensione:** {len(secret_file.getvalue())} bytes")
+        if hasattr(secret_file, "type"):
+            st.write(f"**Tipo:** {secret_file.type}")
+
+    # Parametri
+    st.subheader("⚙️ Parametri")
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        zip_mode = st.selectbox(
+            "Modalità compressione",
+            [CompressionMode.NO_ZIP, CompressionMode.FILE, CompressionMode.DIR],
+            format_func=lambda x: {
+                CompressionMode.NO_ZIP: "Nessuna",
+                CompressionMode.FILE: "Comprimi file",
+                CompressionMode.DIR: "Comprimi directory",
+            }[x],
+        )
+    with col2:
+        n = st.number_input(
+            "N (bit da modificare)",
+            min_value=0,
+            max_value=8,
+            value=0,
+            help="0 = automatico",
+        )
+    with col3:
+        div = st.number_input(
+            "Divisore",
+            min_value=0.0,
+            value=0.0,
+            key="bin_div",
+            help="0.0 = automatico",
+        )
+
+    col1, col2 = st.columns(2)
+    with col1:
+        output_name = st.text_input(
+            "Nome file output", value="image_with_file.png", key="bin_output"
+        )
+    with col2:
+        save_backup = st.checkbox("Salva parametri su file", key="bin_backup_save")
+        backup_name = ""
+        if save_backup:
+            backup_name = st.text_input(
+                "Nome file backup", value="binary_backup.dat", key="bin_backup_name"
+            )
