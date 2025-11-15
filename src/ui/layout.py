@@ -29,8 +29,7 @@ class AppLayout:
         data_type = st.sidebar.selectbox(
             "Tipo di dati", ["Stringhe", "Immagini", "File binari"]
         )
-
-        st.sidebar.markdown("---")
+        
         return mode, data_type
 
     @staticmethod
