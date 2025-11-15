@@ -2,14 +2,15 @@
 Utilità per operazioni sui file e compressione
 """
 
-import sys
 import os
+import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 import zipfile
 from os import remove, walk
-from os.path import getsize, join, relpath, exists
+from os.path import exists, getsize, join, relpath
+
 from config.constants import CompressionMode
 
 

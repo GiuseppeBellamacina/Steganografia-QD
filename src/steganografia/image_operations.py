@@ -2,18 +2,20 @@
 Operazioni di steganografia per le immagini
 """
 
-import sys
 import os
+import sys
 from typing import Optional, Tuple
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 import numpy as np
 from PIL import Image
+
 from config.constants import DataType, ErrorMessages
+
+from .backup import backup_system
 from .bit_operations import set_last_n_bits
 from .validator import ParameterValidator
-from .backup import backup_system
 
 
 class ImageSteganography:

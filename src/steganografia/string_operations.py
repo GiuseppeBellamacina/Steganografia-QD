@@ -2,22 +2,24 @@
 Operazioni di steganografia per le stringhe
 """
 
-import sys
 import os
+import sys
 from typing import Optional
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from PIL import Image
+
 from config.constants import DataType, ErrorMessages
+
+from .backup import backup_system
 from .bit_operations import (
     binary_convert,
     binary_convert_back,
-    set_last_bit,
     set_color_component,
+    set_last_bit,
 )
 from .validator import ParameterValidator
-from .backup import backup_system
 
 
 class StringSteganography:

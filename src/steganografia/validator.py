@@ -2,13 +2,14 @@
 Validazione dei parametri per le operazioni di steganografia
 """
 
-import sys
 import os
+import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from PIL import Image
-from config.constants import ValidationLimits, ErrorMessages, CompressionMode
+
+from config.constants import CompressionMode, ErrorMessages, ValidationLimits
 
 
 class ParameterValidator:

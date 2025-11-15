@@ -4,15 +4,13 @@ Pagine per nascondere dati nell'interfaccia Streamlit
 
 import io
 import os
+
 import streamlit as st
 from PIL import Image
 
 from config.constants import CompressionMode
-from .components import (
-    save_uploaded_file,
-    cleanup_temp_file,
-    create_download_button,
-)
+
+from .components import cleanup_temp_file, create_download_button, save_uploaded_file
 
 
 class HideDataPages:
