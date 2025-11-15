@@ -4,6 +4,10 @@
 
 Un'applicazione completa per la steganografia che permette di nascondere e recuperare diversi tipi di dati (stringhe, immagini, file binari) all'interno di immagini utilizzando tecniche LSB (Least Significant Bit).
 
+## 🌐 Live Demo
+
+Prova l'applicazione online su [Streamlit Cloud](https://steg-app.streamlit.app)
+
 ## 📋 Indice
 
 - [Caratteristiche](#caratteristiche)
@@ -271,7 +275,7 @@ Questo progetto è distribuito sotto licenza MIT. Vedi il file `LICENSE` per i d
 
 **[Daniele](https://github.com/danii909)**
 
-**[Simone](https://github.com/simone0028)**
+**[Simone](https://github.com/simone002)**
 
 ---
 
