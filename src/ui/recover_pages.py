@@ -228,3 +228,111 @@ if st.button("🔓 Recupera Immagine", type="primary"):
                 "image/png",
                 "📥 Scarica immagine recuperata",
             )
+
+def recover_binary_page():
+        """Pagina per recuperare file binari"""
+        from src.steganografia import get_bin_file
+
+        st.subheader("📁 Recuperare File Binario")
+
+        # Upload dell'immagine con dati nascosti
+        hidden_image = st.file_uploader(
+            "🖼️ Carica l'immagine con file nascosto:",
+            type=["png", "jpg", "jpeg"],
+            key="recover_binary_hidden_image",
+        )
+
+        # Mostra anteprima dell'immagine
+        if hidden_image:
+            from .image_utils import ImageDisplay
+
+            ImageDisplay.show_resized_image(
+                hidden_image, "🔒 Immagine con File Nascosto", max_width=400
+            )
+            ImageDisplay.show_image_details(hidden_image, "Dettagli Immagine")
+
+        # Opzioni parametri
+        backup_file_path, _, manual_params = display_backup_options(
+            "binary_get", show_manual=True
+        )
+
+        # Parametri manuali se richiesti
+        zip_mode = n = div = size = None
+        if manual_params:
+            st.subheader("⚙️ Parametri Manuali")
+            col1, col2, col3, col4 = st.columns(4)
+
+            with col1:
+                zip_mode = st.selectbox(
+                    "ZipMode",
+                    [CompressionMode.NO_ZIP, CompressionMode.FILE, CompressionMode.DIR],
+                    format_func=lambda x: {
+                        CompressionMode.NO_ZIP: "Nessuna",
+                        CompressionMode.FILE: "File",
+                        CompressionMode.DIR: "Directory",
+                    }[x],
+                    key="manual_zipmode",
+                )
+            with col2:
+                n = st.number_input(
+                    "N", min_value=1, max_value=8, value=1, key="manual_n"
+                )
+            with col3:
+                div = st.number_input(
+                    "DIV", min_value=0.1, value=1.0, key="manual_div_bin"
+                )
+            with col4:
+                size = st.number_input(
+                    "SIZE (bytes)", min_value=1, value=1000, key="manual_size"
+                )
+
+        output_name = st.text_input(
+            "Nome file output", value="recovered_file.bin", key="bin_recover_output"
+        )
+
+        if st.button("🔓 Recupera File", type="primary"):
+            if hidden_image:
+                # Pulisci risultati precedenti
+                if "recover_binary_result" in st.session_state:
+                    del st.session_state["recover_binary_result"]
+                try:
+                    # Salva immagine temporaneamente
+                    hidden_path = save_uploaded_file(hidden_image)
+                    if hidden_path:
+                        img = Image.open(hidden_path)
+
+                        # Recupera file
+                        with st.spinner("Recuperando file..."):
+                            get_bin_file(
+                                img,
+                                output_name,
+                                zip_mode,
+                                n,
+                                div,
+                                size,
+                                backup_file_path,
+                            )
+
+                        if os.path.exists(output_name):
+                            st.success("✅ File recuperato!")
+
+                            # Salva per il download
+                            file_size = os.path.getsize(output_name)
+                            with open(output_name, "rb") as f:
+                                st.session_state["recover_binary_result"] = {
+                                    "data": f.read(),
+                                    "filename": output_name,
+                                    "file_size": file_size,  # Mantieni info file
+                                    "success_message": f"**File recuperato:** {output_name}",
+                                }
+                            # Cleanup
+                            cleanup_temp_file(output_name)
+                        else:
+                            st.error("❌ Impossibile recuperare il file")
+                    else:
+                        st.error("❌ Errore nel salvare l'immagine")
+
+                except Exception as e:
+                    st.error(f"❌ Errore: {str(e)}")
+            else:
+                st.warning("⚠️ Carica un'immagine!")
