@@ -215,8 +215,8 @@ class StringSteganography:
         # Decodifica il messaggio
         try:
             message = binary_convert_back(message_bits)
-        except:
-            raise ValueError(ErrorMessages.DECODE_FAILED)
+        except Exception as e:
+            raise ValueError(ErrorMessages.DECODE_FAILED) from e
 
         # Verifica il checksum
         calculated_checksum = 0

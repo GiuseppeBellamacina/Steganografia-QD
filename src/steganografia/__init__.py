@@ -4,7 +4,7 @@ from .backup import backup_system
 from .binary_operations import BinarySteganography
 from .core import (
     DIR,
-    FILE,  # API principale; Backup e parametri; Costanti
+    FILE,
     NO_ZIP,
     get_bin_file,
     get_image,

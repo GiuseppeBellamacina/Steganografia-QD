@@ -16,6 +16,7 @@ from .components import (
     display_backup_options,
     save_uploaded_file,
 )
+from .image_utils import ImageDisplay
 
 
 class RecoverDataPages:
@@ -37,8 +38,6 @@ class RecoverDataPages:
 
         # Mostra anteprima dell'immagine
         if hidden_image:
-            from .image_utils import ImageDisplay
-
             ImageDisplay.show_resized_image(
                 hidden_image, "🔒 Immagine con Messaggio", max_width=400
             )
@@ -50,6 +49,9 @@ class RecoverDataPages:
 
         if st.button("🔓 Recupera Messaggio", type="primary"):
             if hidden_image:
+                # Pulisci risultati precedenti
+                if "recover_string_result" in st.session_state:
+                    del st.session_state["recover_string_result"]
                 try:
                     # Salva immagine temporaneamente
                     hidden_path = save_uploaded_file(hidden_image)
@@ -64,28 +66,14 @@ class RecoverDataPages:
                             st.success("✅ Messaggio recuperato!")
 
                             # Mostra informazioni sul messaggio
-                            col1, col2 = st.columns(2)
-                            with col1:
-                                st.metric(
-                                    "Lunghezza messaggio", f"{len(message)} caratteri"
-                                )
-                            with col2:
-                                st.metric(
-                                    "Dimensione in byte",
-                                    f"{len(message.encode('utf-8'))} byte",
-                                )
 
-                            st.text_area(
-                                "Messaggio nascosto:", value=message, height=100
-                            )
-
-                            # Download come file di testo
-                            create_download_button(
-                                message.encode("utf-8"),
-                                "messaggio_recuperato.txt",
-                                "text/plain",
-                                "📥 Scarica messaggio come file di testo",
-                            )
+                            # Salva il messaggio per il download
+                            st.session_state["recover_string_result"] = {
+                                "data": message.encode("utf-8"),
+                                "filename": "messaggio_recuperato.txt",
+                                "message_text": message,  # Mantieni il testo per l'anteprima
+                                "message_length": len(message.encode("utf-8")),
+                            }
                         else:
                             st.error("❌ Nessun messaggio valido trovato nell'immagine")
                             st.info("💡 Possibili cause:")
@@ -99,6 +87,34 @@ class RecoverDataPages:
                     st.error(f"❌ Errore: {str(e)}")
             else:
                 st.warning("⚠️ Carica un'immagine!")
+
+        # Sezione download se ci sono risultati
+        if "recover_string_result" in st.session_state:
+            st.markdown("---")
+            st.subheader("📥 Download Risultati")
+
+            result_data = st.session_state["recover_string_result"]
+
+            # Mostra sempre il messaggio recuperato
+            if "message_text" in result_data:
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric("Caratteri", len(result_data["message_text"]))
+                with col2:
+                    st.metric(
+                        "Dimensione in byte", f"{result_data['message_length']} byte"
+                    )
+
+                st.text_area(
+                    "Messaggio nascosto:", value=result_data["message_text"], height=100
+                )
+
+            create_download_button(
+                result_data["data"],
+                result_data["filename"],
+                "text/plain",
+                "📥 Scarica messaggio come file di testo",
+            )
 
     @staticmethod
     def recover_image_page():
@@ -116,8 +132,6 @@ class RecoverDataPages:
 
         # Mostra anteprima dell'immagine
         if hidden_image:
-            from .image_utils import ImageDisplay
-
             ImageDisplay.show_resized_image(
                 hidden_image, "🔒 Immagine con Dati Nascosti", max_width=400
             )
@@ -158,6 +172,9 @@ class RecoverDataPages:
 
         if st.button("🔓 Recupera Immagine", type="primary"):
             if hidden_image:
+                # Pulisci risultati precedenti
+                if "recover_image_result" in st.session_state:
+                    del st.session_state["recover_image_result"]
                 try:
                     # Salva immagine temporaneamente
                     hidden_path = save_uploaded_file(hidden_image)
@@ -180,31 +197,20 @@ class RecoverDataPages:
                         if recovered_img:
                             st.success("✅ Immagine recuperata!")
 
-                            col1, col2 = st.columns(2)
-                            with col1:
-                                st.image(
-                                    recovered_img,
-                                    caption="Immagine recuperata",
-                                    width=400,
-                                )
-                            with col2:
-                                st.write(
-                                    f"**Dimensioni:** {recovered_img.width} x {recovered_img.height}"
-                                )
-                                st.write(f"**Modalità:** {recovered_img.mode}")
-
-                            # Converti l'immagine in buffer per il download
+                            # Salva per il download
                             img_buffer = io.BytesIO()
                             recovered_img.save(img_buffer, format="PNG")
-                            img_buffer.seek(0)
 
-                            # Download
-                            create_download_button(
-                                img_buffer.getvalue(),
-                                output_name,
-                                "image/png",
-                                "📥 Scarica immagine recuperata",
-                            )
+                            st.session_state["recover_image_result"] = {
+                                "data": img_buffer.getvalue(),
+                                "filename": output_name,
+                                "preview_image": recovered_img,  # Mantieni anteprima
+                                "image_info": {
+                                    "width": recovered_img.width,
+                                    "height": recovered_img.height,
+                                    "mode": recovered_img.mode,
+                                },
+                            }
 
                             # Cleanup
                             cleanup_temp_file(output_name)
@@ -217,6 +223,34 @@ class RecoverDataPages:
                     st.error(f"❌ Errore: {str(e)}")
             else:
                 st.warning("⚠️ Carica un'immagine!")
+
+        # Sezione download se ci sono risultati
+        if "recover_image_result" in st.session_state:
+            st.markdown("---")
+            st.subheader("📥 Download Risultati")
+
+            result_data = st.session_state["recover_image_result"]
+
+            # Mostra sempre l'immagine recuperata
+            if "preview_image" in result_data and "image_info" in result_data:
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.image(
+                        result_data["preview_image"],
+                        caption="Immagine recuperata",
+                        width=400,
+                    )
+                with col2:
+                    info = result_data["image_info"]
+                    st.write(f"**Dimensioni:** {info['width']} x {info['height']}")
+                    st.write(f"**Modalità:** {info['mode']}")
+
+            create_download_button(
+                result_data["data"],
+                result_data["filename"],
+                "image/png",
+                "📥 Scarica immagine recuperata",
+            )
 
     @staticmethod
     def recover_binary_page():
@@ -234,8 +268,6 @@ class RecoverDataPages:
 
         # Mostra anteprima dell'immagine
         if hidden_image:
-            from .image_utils import ImageDisplay
-
             ImageDisplay.show_resized_image(
                 hidden_image, "🔒 Immagine con File Nascosto", max_width=400
             )
@@ -282,6 +314,9 @@ class RecoverDataPages:
 
         if st.button("🔓 Recupera File", type="primary"):
             if hidden_image:
+                # Pulisci risultati precedenti
+                if "recover_binary_result" in st.session_state:
+                    del st.session_state["recover_binary_result"]
                 try:
                     # Salva immagine temporaneamente
                     hidden_path = save_uploaded_file(hidden_image)
@@ -303,18 +338,15 @@ class RecoverDataPages:
                         if os.path.exists(output_name):
                             st.success("✅ File recuperato!")
 
+                            # Salva per il download
                             file_size = os.path.getsize(output_name)
-                            st.write(f"**File recuperato:** {output_name}")
-                            st.write(f"**Dimensione:** {file_size} bytes")
-
-                            # Download
                             with open(output_name, "rb") as f:
-                                create_download_button(
-                                    f.read(),
-                                    output_name,
-                                    "application/octet-stream",
-                                    "📥 Scarica file recuperato",
-                                )
+                                st.session_state["recover_binary_result"] = {
+                                    "data": f.read(),
+                                    "filename": output_name,
+                                    "file_size": file_size,  # Mantieni info file
+                                    "success_message": f"**File recuperato:** {output_name}",
+                                }
                             # Cleanup
                             cleanup_temp_file(output_name)
                         else:
@@ -326,3 +358,22 @@ class RecoverDataPages:
                     st.error(f"❌ Errore: {str(e)}")
             else:
                 st.warning("⚠️ Carica un'immagine!")
+
+        # Sezione download se ci sono risultati
+        if "recover_binary_result" in st.session_state:
+            st.markdown("---")
+            st.subheader("📥 Download Risultati")
+
+            result_data = st.session_state["recover_binary_result"]
+
+            # Mostra sempre le info del file recuperato
+            if "success_message" in result_data:
+                st.write(result_data["success_message"])
+                st.write(f"**Dimensione:** {result_data['file_size']} bytes")
+
+            create_download_button(
+                result_data["data"],
+                result_data["filename"],
+                "application/octet-stream",
+                "📥 Scarica file recuperato",
+            )

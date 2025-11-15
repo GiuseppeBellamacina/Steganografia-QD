@@ -6,6 +6,7 @@ Utilizza l'architettura modulare refactored
 import streamlit as st
 import sys
 from pathlib import Path
+import traceback
 
 # Aggiungi il percorso src al Python path
 src_path = Path(__file__).parent / "src"
@@ -66,7 +67,6 @@ def main():
         
         # In modalità debug, mostra anche il traceback
         if st.sidebar.checkbox("🐛 Mostra dettagli debug"):
-            import traceback
             st.code(traceback.format_exc())
 
 if __name__ == "__main__":
