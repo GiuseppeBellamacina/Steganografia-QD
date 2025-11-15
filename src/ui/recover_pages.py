@@ -91,7 +91,9 @@ def recover_string_page():
                     st.error(f"❌ Errore: {str(e)}")
             else:
                 st.warning("⚠️ Carica un'immagine!")
-                def recover_image_page():
+                
+                
+def recover_image_page():
         """Pagina per recuperare immagini"""
         from src.steganografia import get_image
 
@@ -145,3 +147,84 @@ def recover_string_page():
         output_name = st.text_input(
             "Nome file output", value="recovered_image.png", key="img_recover_output"
         )
+if st.button("🔓 Recupera Immagine", type="primary"):
+            if hidden_image:
+                # Pulisci risultati precedenti
+                if "recover_image_result" in st.session_state:
+                    del st.session_state["recover_image_result"]
+                try:
+                    # Salva immagine temporaneamente
+                    hidden_path = save_uploaded_file(hidden_image)
+                    if hidden_path:
+                        img = Image.open(hidden_path)
+
+                        # Recupera immagine
+                        with st.spinner("Recuperando immagine..."):
+                            recovered_img = get_image(
+                                img,
+                                output_name,
+                                lsb,
+                                msb,
+                                div,
+                                width,
+                                height,
+                                backup_file_path,
+                            )
+
+                        if recovered_img:
+                            st.success("✅ Immagine recuperata!")
+
+                            # Salva per il download
+                            img_buffer = io.BytesIO()
+                            recovered_img.save(img_buffer, format="PNG")
+
+                            st.session_state["recover_image_result"] = {
+                                "data": img_buffer.getvalue(),
+                                "filename": output_name,
+                                "preview_image": recovered_img,  # Mantieni anteprima
+                                "image_info": {
+                                    "width": recovered_img.width,
+                                    "height": recovered_img.height,
+                                    "mode": recovered_img.mode,
+                                },
+                            }
+
+                            # Cleanup
+                            cleanup_temp_file(output_name)
+                        else:
+                            st.error("❌ Impossibile recuperare l'immagine")
+                    else:
+                        st.error("❌ Errore nel salvare l'immagine")
+
+                except Exception as e:
+                    st.error(f"❌ Errore: {str(e)}")
+            else:
+                st.warning("⚠️ Carica un'immagine!")
+
+        # Sezione download se ci sono risultati
+        if "recover_image_result" in st.session_state:
+            st.markdown("---")
+            st.subheader("📥 Download Risultati")
+
+            result_data = st.session_state["recover_image_result"]
+
+            # Mostra sempre l'immagine recuperata
+            if "preview_image" in result_data and "image_info" in result_data:
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.image(
+                        result_data["preview_image"],
+                        caption="Immagine recuperata",
+                        width=400,
+                    )
+                with col2:
+                    info = result_data["image_info"]
+                    st.write(f"**Dimensioni:** {info['width']} x {info['height']}")
+                    st.write(f"**Modalità:** {info['mode']}")
+
+            create_download_button(
+                result_data["data"],
+                result_data["filename"],
+                "image/png",
+                "📥 Scarica immagine recuperata",
+            )
