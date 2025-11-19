@@ -694,3 +694,187 @@ class TestResultDisplay:
         ResultDisplay.show_download_button(b"data", "file.txt", "text/plain", "Download")
         
         mock_download.assert_called_once()
+
+
+# ============================================
+# Ulteriori test per hide_pages.py e recover_pages.py
+# ============================================
+
+def _make_image(path):
+    img = Image.new("RGB", (100, 100), color="green")
+    img.save(path, format="PNG")
+    return img
+
+
+def test_hide_string_page_success(monkeypatch, tmp_path):
+    from src.ui.hide_pages import HideDataPages
+
+    host_path = tmp_path / "host.png"
+    _make_image(host_path)
+
+    # Mocks
+    monkeypatch.setattr(
+        "src.ui.hide_pages.save_uploaded_file", lambda uploaded: str(host_path)
+    )
+
+    def fake_hide_message(img, message):
+        return Image.open(str(host_path))
+
+    monkeypatch.setattr("src.steganografia.hide_message", fake_hide_message, raising=False)
+    monkeypatch.setattr("src.ui.hide_pages.cleanup_temp_file", lambda p: None)
+    mock_create = MagicMock()
+    monkeypatch.setattr("src.ui.hide_pages.create_download_button", mock_create)
+
+    # Patch streamlit UI inputs
+    monkeypatch.setattr("streamlit.file_uploader", lambda *a, **k: MagicMock(name="host", spec=[]))
+    monkeypatch.setattr("streamlit.text_area", lambda *a, **k: "secret message")
+    monkeypatch.setattr("streamlit.text_input", lambda *a, **k: "out.png")
+    monkeypatch.setattr("streamlit.button", lambda *a, **k: True)
+    monkeypatch.setattr("streamlit.success", lambda *a, **k: None)
+
+    HideDataPages.hide_string_page()
+
+    assert mock_create.called
+
+
+def test_hide_image_page_success(monkeypatch, tmp_path):
+    from src.ui.hide_pages import HideDataPages
+
+    host_path = tmp_path / "host.png"
+    secret_path = tmp_path / "secret.png"
+    _make_image(host_path)
+    _make_image(secret_path)
+
+    seq = [str(host_path), str(secret_path)]
+
+    def fake_save(uploaded):
+        return seq.pop(0)
+
+    monkeypatch.setattr("src.ui.hide_pages.save_uploaded_file", fake_save)
+
+    def fake_hide_image(img1, img2, lsb, msb, div, backup_file):
+        return Image.open(str(host_path)), 1, 8, 0.0, None, None
+
+    monkeypatch.setattr("src.steganografia.hide_image", fake_hide_image, raising=False)
+    monkeypatch.setattr("src.ui.hide_pages.cleanup_temp_file", lambda p: None)
+    mock_create = MagicMock()
+    monkeypatch.setattr("src.ui.hide_pages.create_download_button", mock_create)
+
+    # Streamlit inputs
+    monkeypatch.setattr("streamlit.file_uploader", lambda *a, **k: MagicMock(name="file", spec=[]))
+    monkeypatch.setattr("streamlit.number_input", lambda *a, **k: 1)
+    monkeypatch.setattr("streamlit.text_input", lambda *a, **k: "out.png")
+    monkeypatch.setattr("streamlit.checkbox", lambda *a, **k: False)
+    monkeypatch.setattr("streamlit.button", lambda *a, **k: True)
+    monkeypatch.setattr("streamlit.success", lambda *a, **k: None)
+
+    HideDataPages.hide_image_page()
+
+    assert mock_create.called
+
+
+def test_hide_binary_page_success(monkeypatch, tmp_path):
+    from src.ui.hide_pages import HideDataPages
+
+    host_path = tmp_path / "host.png"
+    _make_image(host_path)
+
+    tmp_file = tmp_path / "secret.bin"
+    tmp_file.write_bytes(b"hello world")
+
+    seq = [str(host_path), str(tmp_file)]
+
+    def fake_save(uploaded):
+        return seq.pop(0)
+
+    monkeypatch.setattr("src.ui.hide_pages.save_uploaded_file", fake_save)
+
+    def fake_hide_bin_file(img, secret_path, zip_mode, n, div, backup_file):
+        return Image.open(str(host_path)), 1, 0.0, len(b"hello world")
+
+    monkeypatch.setattr("src.steganografia.hide_bin_file", fake_hide_bin_file, raising=False)
+    monkeypatch.setattr("src.ui.hide_pages.cleanup_temp_file", lambda p: None)
+    mock_create = MagicMock()
+    monkeypatch.setattr("src.ui.hide_pages.create_download_button", mock_create)
+
+    # Streamlit: return mocks that have a `name` attribute (host then secret)
+    file_mocks = [MagicMock(), MagicMock()]
+    file_mocks[0].name = host_path.name
+    file_mocks[1].name = tmp_file.name
+    monkeypatch.setattr("streamlit.file_uploader", lambda *a, **k: file_mocks.pop(0))
+    monkeypatch.setattr("streamlit.selectbox", lambda *a, **k: None)
+    monkeypatch.setattr("streamlit.number_input", lambda *a, **k: 1)
+    monkeypatch.setattr("streamlit.text_input", lambda *a, **k: "out.png")
+    monkeypatch.setattr("streamlit.checkbox", lambda *a, **k: False)
+    monkeypatch.setattr("streamlit.button", lambda *a, **k: True)
+
+    HideDataPages.hide_binary_page()
+
+    assert mock_create.called
+
+
+def test_recover_string_page_success(monkeypatch, tmp_path):
+    from src.ui.recover_pages import RecoverDataPages
+
+    host_path = tmp_path / "hidden.png"
+    _make_image(host_path)
+
+    monkeypatch.setattr("src.ui.recover_pages.save_uploaded_file", lambda uploaded: str(host_path))
+    monkeypatch.setattr("src.steganografia.get_message", lambda img: "hello world", raising=False)
+    mock_create = MagicMock()
+    monkeypatch.setattr("src.ui.recover_pages.create_download_button", mock_create)
+
+    monkeypatch.setattr("streamlit.file_uploader", lambda *a, **k: MagicMock(name="file", spec=[]))
+    monkeypatch.setattr("streamlit.button", lambda *a, **k: True)
+
+    RecoverDataPages.recover_string_page()
+
+    assert mock_create.called
+
+
+def test_recover_image_page_success(monkeypatch, tmp_path):
+    from src.ui.recover_pages import RecoverDataPages
+
+    host_path = tmp_path / "hidden_img.png"
+    _make_image(host_path)
+
+    monkeypatch.setattr("src.ui.recover_pages.save_uploaded_file", lambda uploaded: str(host_path))
+
+    def fake_get_image(img, output_name, lsb, msb, div, width, height, backup_file_path):
+        return Image.open(str(host_path))
+
+    monkeypatch.setattr("src.steganografia.get_image", fake_get_image, raising=False)
+    monkeypatch.setattr("src.ui.recover_pages.display_backup_options", lambda *a, **k: (None, True, False))
+    mock_create = MagicMock()
+    monkeypatch.setattr("src.ui.recover_pages.create_download_button", mock_create)
+
+    monkeypatch.setattr("streamlit.file_uploader", lambda *a, **k: MagicMock(name="file", spec=[]))
+    monkeypatch.setattr("streamlit.button", lambda *a, **k: True)
+
+    RecoverDataPages.recover_image_page()
+
+    assert mock_create.called
+
+
+def test_recover_binary_page_success(monkeypatch, tmp_path):
+    from src.ui.recover_pages import RecoverDataPages
+
+    host_path = tmp_path / "hidden_bin.png"
+    _make_image(host_path)
+
+    # fake get_bin_file that writes output file
+    def fake_get_bin_file(img, output_name, zip_mode, n, div, size, backup_file_path):
+        with open(output_name, "wb") as f:
+            f.write(b"recovered-bytes")
+
+    monkeypatch.setattr("src.ui.recover_pages.save_uploaded_file", lambda uploaded: str(host_path))
+    monkeypatch.setattr("src.steganografia.get_bin_file", fake_get_bin_file, raising=False)
+    mock_create = MagicMock()
+    monkeypatch.setattr("src.ui.recover_pages.create_download_button", mock_create)
+
+    monkeypatch.setattr("streamlit.file_uploader", lambda *a, **k: MagicMock(name="file", spec=[]))
+    monkeypatch.setattr("streamlit.button", lambda *a, **k: True)
+
+    RecoverDataPages.recover_binary_page()
+
+    assert mock_create.called
