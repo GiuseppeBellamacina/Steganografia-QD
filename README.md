@@ -210,6 +210,8 @@ Steganografia/
 │   └── constants.py             # Costanti globali
 │
 ├── 📁 tests/                    # Suite di test
+|   ├── test_app.py
+|   ├── test_ui.py
 │   ├── test_string_operations.py
 │   ├── test_image_operations.py
 │   ├── test_binary_operations.py
